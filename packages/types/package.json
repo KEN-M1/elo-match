@@ -1,0 +1,10 @@
+{
+  "name": "@rankkit/types",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "types": "./generated/api.ts",
+  "exports": {
+    ".": "./generated/api.ts"
+  }
+}

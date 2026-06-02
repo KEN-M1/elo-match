@@ -1,0 +1,17 @@
+{
+  "name": "rankkit",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:backend": "powershell -ExecutionPolicy Bypass -File scripts/dev-backend.ps1",
+    "dev:web": "powershell -ExecutionPolicy Bypass -File scripts/dev-web.ps1",
+    "reset:local": "powershell -ExecutionPolicy Bypass -File scripts/reset-local-data.ps1",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "test": "powershell -ExecutionPolicy Bypass -File scripts/test-all.ps1"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3"
+  }
+}

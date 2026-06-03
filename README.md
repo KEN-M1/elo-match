@@ -59,20 +59,22 @@ pnpm exec playwright install chromium
 Runtime persistence still uses the local Store Snapshot for the MVP, but the future Postgres schema
 is tracked with Alembic.
 
+Start a local Postgres container:
+
+```powershell
+pnpm run dev:db
+```
+
 Render the migration SQL without a running database:
 
 ```powershell
-Push-Location backend
-.venv\Scripts\python.exe -m alembic upgrade head --sql
-Pop-Location
+pnpm run db:sql
 ```
 
 Apply migrations to a configured Postgres database:
 
 ```powershell
-Push-Location backend
-.venv\Scripts\python.exe -m alembic upgrade head
-Pop-Location
+pnpm run db:migrate
 ```
 
 ## Demo Path

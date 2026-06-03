@@ -1,0 +1,20 @@
+services:
+  rankkit-postgres:
+    image: postgres:16-alpine
+    container_name: rankkit-postgres
+    environment:
+      POSTGRES_DB: rankkit
+      POSTGRES_USER: rankkit
+      POSTGRES_PASSWORD: rankkit
+    ports:
+      - "5432:5432"
+    volumes:
+      - rankkit-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rankkit -d rankkit"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  rankkit-postgres-data:

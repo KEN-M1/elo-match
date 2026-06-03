@@ -31,6 +31,7 @@ pnpm run dev:web
 ```
 
 The web script writes `apps/web/.env.local` with `NEXT_PUBLIC_API_URL=http://localhost:8002`.
+If `.env.local` already exists, the script preserves OAuth values and only updates that API URL.
 That avoids stale dev servers that may still be listening on older API ports.
 
 ## Tests
@@ -40,6 +41,18 @@ pnpm test
 ```
 
 When dependencies are installed, use `pytest` for the full backend suite.
+
+Run the browser demo smoke test with:
+
+```powershell
+pnpm run test:e2e
+```
+
+If Playwright browsers are missing, install Chromium once:
+
+```powershell
+pnpm exec playwright install chromium
+```
 
 ## Demo Path
 

@@ -9,9 +9,11 @@
     "reset:local": "powershell -ExecutionPolicy Bypass -File scripts/reset-local-data.ps1",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
-    "test": "powershell -ExecutionPolicy Bypass -File scripts/test-all.ps1"
+    "test": "powershell -ExecutionPolicy Bypass -File scripts/test-all.ps1",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "turbo": "^2.3.3"
   }
 }

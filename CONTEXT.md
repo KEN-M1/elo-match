@@ -18,6 +18,7 @@
 - **League Workspace**: The authenticated league management surface that loads league state and coordinates invites, local actor selection, match logging, confirmations, disputes, and rating history.
 - **Authenticated Actor**: The current browser user, resolved from Google OAuth or the local demo fallback, who performs league and match actions.
 - **RankKit Client**: The web module that converts backend transport responses into RankKit domain values for screens and workflows.
+- **Postgres Schema**: The future database table shape for RankKit users, leagues, members, invites, matches, and rating history; separate from the local Store Snapshot until a real adapter is implemented.
 
 ## Architectural Vocabulary
 

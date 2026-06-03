@@ -54,6 +54,27 @@ If Playwright browsers are missing, install Chromium once:
 pnpm exec playwright install chromium
 ```
 
+## Database Migrations
+
+Runtime persistence still uses the local Store Snapshot for the MVP, but the future Postgres schema
+is tracked with Alembic.
+
+Render the migration SQL without a running database:
+
+```powershell
+Push-Location backend
+.venv\Scripts\python.exe -m alembic upgrade head --sql
+Pop-Location
+```
+
+Apply migrations to a configured Postgres database:
+
+```powershell
+Push-Location backend
+.venv\Scripts\python.exe -m alembic upgrade head
+Pop-Location
+```
+
 ## Demo Path
 
 1. In one PowerShell window, run `pnpm run dev:backend`.

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import StrEnum
@@ -105,13 +104,13 @@ class RankKitStore:
     """In-memory implementation of the RankKit MVP interface."""
 
     def __init__(self, persistence_path: str | Path | None = None) -> None:
-        self.persistence_path = Path(persistence_path) if persistence_path else None
         self.users: dict[str, User] = {}
         self.leagues: dict[str, League] = {}
         self.members: dict[tuple[str, str], LeagueMember] = {}
         self.invites: dict[str, Invite] = {}
         self.matches: dict[str, Match] = {}
         self.rating_history: list[RatingHistoryEntry] = []
+        self._local_snapshot = self._create_local_snapshot(persistence_path)
         self._load()
         from app.match_lifecycle import MatchLifecycle
 
@@ -322,104 +321,43 @@ class RankKitStore:
         member = self.members.get((league_id, user_id))
         return member is not None and member.role == "admin"
 
+    def _create_local_snapshot(self, persistence_path: str | Path | None):
+        if persistence_path is None:
+            return None
+
+        from app.local_snapshot import LocalJsonSnapshot
+
+        return LocalJsonSnapshot(persistence_path)
+
     def _save(self) -> None:
-        if self.persistence_path is None:
+        if self._local_snapshot is None:
             return
 
-        self.persistence_path.parent.mkdir(parents=True, exist_ok=True)
-        self.persistence_path.write_text(json.dumps(self._snapshot(), indent=2), encoding="utf-8")
+        self._local_snapshot.save(self._snapshot())
 
     def _load(self) -> None:
-        if self.persistence_path is None or not self.persistence_path.exists():
+        if self._local_snapshot is None:
             return
 
-        snapshot = json.loads(self.persistence_path.read_text(encoding="utf-8"))
-        self.users = {item["id"]: User(**item) for item in snapshot.get("users", [])}
-        self.leagues = {item["id"]: League(**item) for item in snapshot.get("leagues", [])}
-        self.members = {
-            (item["league_id"], item["user_id"]): LeagueMember(
-                **{**item, "joined_at": _parse_datetime(item["joined_at"])}
-            )
-            for item in snapshot.get("members", [])
-        }
-        self.invites = {
-            item["token"]: Invite(
-                **{
-                    **item,
-                    "accepted_at": _parse_optional_datetime(item.get("accepted_at")),
-                }
-            )
-            for item in snapshot.get("invites", [])
-        }
-        self.matches = {
-            item["id"]: Match(
-                **{
-                    **item,
-                    "status": MatchStatus(item["status"]),
-                    "played_at": _parse_datetime(item["played_at"]),
-                    "created_at": _parse_datetime(item["created_at"]),
-                    "rating_result": _parse_elo_result(item.get("rating_result")),
-                }
-            )
-            for item in snapshot.get("matches", [])
-        }
-        self.rating_history = [
-            RatingHistoryEntry(
-                **{
-                    **item,
-                    "recorded_at": _parse_datetime(item["recorded_at"]),
-                }
-            )
-            for item in snapshot.get("rating_history", [])
-        ]
+        snapshot = self._local_snapshot.load()
+        if snapshot is None:
+            return
 
-    def _snapshot(self) -> dict:
-        return {
-            "users": [user.__dict__ for user in self.users.values()],
-            "leagues": [league.__dict__ for league in self.leagues.values()],
-            "members": [
-                {**member.__dict__, "joined_at": _format_datetime(member.joined_at)}
-                for member in self.members.values()
-            ],
-            "invites": [
-                {
-                    **invite.__dict__,
-                    "accepted_at": _format_optional_datetime(invite.accepted_at),
-                }
-                for invite in self.invites.values()
-            ],
-            "matches": [
-                {
-                    **match.__dict__,
-                    "status": str(match.status),
-                    "played_at": _format_datetime(match.played_at),
-                    "created_at": _format_datetime(match.created_at),
-                    "rating_result": match.rating_result.__dict__ if match.rating_result else None,
-                }
-                for match in self.matches.values()
-            ],
-            "rating_history": [
-                {**entry.__dict__, "recorded_at": _format_datetime(entry.recorded_at)}
-                for entry in self.rating_history
-            ],
-        }
+        self.users = snapshot.users
+        self.leagues = snapshot.leagues
+        self.members = snapshot.members
+        self.invites = snapshot.invites
+        self.matches = snapshot.matches
+        self.rating_history = snapshot.rating_history
 
+    def _snapshot(self):
+        from app.local_snapshot import StoreSnapshot
 
-def _format_datetime(value: datetime) -> str:
-    return value.isoformat()
-
-
-def _format_optional_datetime(value: datetime | None) -> str | None:
-    return value.isoformat() if value else None
-
-
-def _parse_datetime(value: str) -> datetime:
-    return datetime.fromisoformat(value)
-
-
-def _parse_optional_datetime(value: str | None) -> datetime | None:
-    return datetime.fromisoformat(value) if value else None
-
-
-def _parse_elo_result(value: dict | None) -> EloResult | None:
-    return EloResult(**value) if value else None
+        return StoreSnapshot(
+            users=self.users,
+            leagues=self.leagues,
+            members=self.members,
+            invites=self.invites,
+            matches=self.matches,
+            rating_history=self.rating_history,
+        )

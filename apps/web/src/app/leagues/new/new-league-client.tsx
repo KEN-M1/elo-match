@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { api } from "../../../lib/api";
-import { setLocalUser } from "../../../lib/local-user";
+import { syncLocalActor } from "../../../lib/actor";
 
 export function NewLeagueClient() {
   const router = useRouter();
@@ -23,18 +23,15 @@ export function NewLeagueClient() {
     setStatus("Syncing local user...");
 
     try {
-      const user = (await api.auth.sync({ email, name: email.split("@")[0] || "Owner" })).data;
-      setLocalUser(user);
+      const user = await syncLocalActor({ email }, "Owner");
 
       setStatus("Creating league...");
-      const league = (
-        await api.leagues.create({
-          owner_id: user.id,
-          name,
-          slug: slugify(slug || name),
-          is_public: isPublic,
-        })
-      ).data;
+      const league = await api.leagues.create({
+        owner_id: user.id,
+        name,
+        slug: slugify(slug || name),
+        is_public: isPublic,
+      });
 
       router.push(`/leagues/${league.id}`);
     } catch (createError) {

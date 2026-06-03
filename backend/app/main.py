@@ -2,6 +2,7 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from app.auth import verify_bearer_token
 from app.config import settings
 from app.domain import RankKitError, RankKitStore
 
@@ -66,7 +67,19 @@ def create_app() -> FastAPI:
         return {"data": store.sync_user(body.email, body.name, body.image)}
 
     @app.get("/v1/auth/me")
-    def me(x_rankkit_user: str | None = Header(default=None)) -> dict:
+    def me(
+        authorization: str | None = Header(default=None),
+        x_rankkit_user: str | None = Header(default=None),
+    ) -> dict:
+        principal = _response(lambda: verify_bearer_token(authorization))["data"]
+        if principal is not None:
+            return {
+                "data": store.sync_user(
+                    email=principal.email,
+                    name=principal.name,
+                    image=principal.image,
+                )
+            }
         if not x_rankkit_user:
             raise HTTPException(status_code=401, detail="Missing user header for local MVP.")
         user = store.users.get(x_rankkit_user)

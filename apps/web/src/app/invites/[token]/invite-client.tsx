@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { api } from "../../../lib/api";
-import { setLocalUser } from "../../../lib/local-user";
+import { syncLocalActor } from "../../../lib/actor";
 
 export function InviteClient({ token }: { token: string }) {
   const [email, setEmail] = useState("player@example.com");
@@ -17,9 +17,8 @@ export function InviteClient({ token }: { token: string }) {
     setStatus("Syncing local user...");
 
     try {
-      const user = (await api.auth.sync({ email, name: email.split("@")[0] || "Player" })).data;
-      setLocalUser(user);
-      const member = (await api.invites.accept(token, user.id)).data;
+      const user = await syncLocalActor({ email }, "Player");
+      const member = await api.invites.accept(token, user.id);
       setLeagueId(member.league_id);
       setStatus("Invite accepted. You can open the league workspace.");
     } catch (inviteError) {

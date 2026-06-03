@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import type { League, User } from "@rankkit/types";
 
 import { api } from "../../lib/api";
-import { getLocalUser, setLocalUser } from "../../lib/local-user";
+import { getStoredActor, syncLocalActor } from "../../lib/actor";
 
 export function DashboardClient() {
   const [email, setEmail] = useState("owner@example.com");
@@ -15,7 +15,7 @@ export function DashboardClient() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const existingUser = getLocalUser();
+    const existingUser = getStoredActor();
     if (!existingUser) return;
     setUser(existingUser);
     setEmail(existingUser.email);
@@ -27,8 +27,7 @@ export function DashboardClient() {
     setStatus("Syncing local user...");
 
     try {
-      const synced = (await api.auth.sync({ email, name: email.split("@")[0] || "Owner" })).data;
-      setLocalUser(synced);
+      const synced = await syncLocalActor({ email }, "Owner");
       setUser(synced);
       await loadLeagues(synced);
     } catch (syncError) {
@@ -42,7 +41,7 @@ export function DashboardClient() {
 
     try {
       const response = await api.leagues.list(currentUser?.id);
-      setLeagues(response.data);
+      setLeagues(response);
       setStatus(
         currentUser
           ? `Showing leagues for ${currentUser.email}.`

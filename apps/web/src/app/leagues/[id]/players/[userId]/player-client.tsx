@@ -23,11 +23,11 @@ export function PlayerClient({ leagueId, userId }: { leagueId: string; userId: s
     ])
       .then(([leagueResponse, membersResponse, historyResponse]) => {
         if (!isMounted) return;
-        setLeague(leagueResponse.data);
+        setLeague(leagueResponse);
         setMember(
-          membersResponse.data.find((candidate) => candidate.user_id === userId) ?? null,
+          membersResponse.find((candidate) => candidate.user_id === userId) ?? null,
         );
-        setHistory(historyResponse.data);
+        setHistory(historyResponse);
         setStatus("Player loaded.");
       })
       .catch((loadError) => {

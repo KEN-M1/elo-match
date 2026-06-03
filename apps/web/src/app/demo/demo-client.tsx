@@ -45,37 +45,33 @@ export function DemoClient() {
 
     try {
       const slug = `${slugify(leagueName)}-${Date.now().toString(36)}`;
-      const owner = (await api.auth.sync({ email: ownerEmail, name: "Owner" })).data;
-      const opponent = (await api.auth.sync({ email: opponentEmail, name: "Opponent" })).data;
+      const owner = await api.auth.sync({ email: ownerEmail, name: "Owner" });
+      const opponent = await api.auth.sync({ email: opponentEmail, name: "Opponent" });
 
       setStatus("Creating league...");
-      const league = (
-        await api.leagues.create({
-          owner_id: owner.id,
-          name: leagueName,
-          slug,
-          is_public: true,
-        })
-      ).data;
+      const league = await api.leagues.create({
+        owner_id: owner.id,
+        name: leagueName,
+        slug,
+        is_public: true,
+      });
 
       setStatus("Creating invite and accepting as opponent...");
-      const invite = (await api.invites.create(league.id, owner.id)).data;
+      const invite = await api.invites.create(league.id, owner.id);
       await api.invites.accept(invite.token, opponent.id);
 
       setStatus("Logging match...");
-      const match = (
-        await api.matches.log(league.id, {
-          reported_by_id: owner.id,
-          winner_id: owner.id,
-          loser_id: opponent.id,
-        })
-      ).data;
+      const match = await api.matches.log(league.id, {
+        reported_by_id: owner.id,
+        winner_id: owner.id,
+        loser_id: opponent.id,
+      });
 
       setStatus("Confirming match as opponent...");
-      const confirmed = (await api.matches.confirm(league.id, match.id, opponent.id)).data;
-      const members = (await api.leagues.leaderboard(league.id)).data;
-      const ownerHistory = (await api.ratings.history(league.id, owner.id)).data;
-      const opponentHistory = (await api.ratings.history(league.id, opponent.id)).data;
+      const confirmed = await api.matches.confirm(league.id, match.id, opponent.id);
+      const members = await api.leagues.leaderboard(league.id);
+      const ownerHistory = await api.ratings.history(league.id, owner.id);
+      const opponentHistory = await api.ratings.history(league.id, opponent.id);
 
       setState({
         owner,

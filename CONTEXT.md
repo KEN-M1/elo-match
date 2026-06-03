@@ -14,6 +14,10 @@
 - **Leaderboard**: The ordered list of league members by rating.
 - **Rating History**: The append-only record of rating values after confirmed matches.
 - **Public League Page**: A read-only leaderboard reachable by slug without auth when public.
+- **Store Snapshot**: The persisted local JSON representation of RankKit users, leagues, members, invites, matches, and rating history.
+- **League Workspace**: The authenticated league management surface that loads league state and coordinates invites, local actor selection, match logging, confirmations, disputes, and rating history.
+- **Authenticated Actor**: The current browser user, resolved from Google OAuth or the local demo fallback, who performs league and match actions.
+- **RankKit Client**: The web module that converts backend transport responses into RankKit domain values for screens and workflows.
 
 ## Architectural Vocabulary
 

@@ -26,13 +26,20 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(`RankKit API ${response.status}: ${detail}`);
   }
 
-  return response.json() as Promise<T>;
+  const payload = (await response.json()) as ApiResponse<T>;
+  return payload.data;
 }
 
 export const api = {
   auth: {
+    me: (accessToken: string) =>
+      request<User>("/v1/auth/me", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }),
     sync: (body: { email: string; name?: string; image?: string }) =>
-      request<ApiResponse<User>>("/v1/auth/sync", {
+      request<User>("/v1/auth/sync", {
         method: "POST",
         body: JSON.stringify(body),
       }),
@@ -40,11 +47,11 @@ export const api = {
   leagues: {
     list: (userId?: string) => {
       const query = userId ? `?user_id=${encodeURIComponent(userId)}` : "";
-      return request<ApiResponse<League[]>>(`/v1/leagues${query}`);
+      return request<League[]>(`/v1/leagues${query}`);
     },
-    get: (leagueId: string) => request<ApiResponse<League>>(`/v1/leagues/${leagueId}`),
+    get: (leagueId: string) => request<League>(`/v1/leagues/${leagueId}`),
     members: (leagueId: string) =>
-      request<ApiResponse<MemberSummary[]>>(`/v1/leagues/${leagueId}/members`),
+      request<MemberSummary[]>(`/v1/leagues/${leagueId}/members`),
     create: (body: {
       owner_id: string;
       name: string;
@@ -52,57 +59,57 @@ export const api = {
       description?: string;
       is_public?: boolean;
     }) =>
-      request<ApiResponse<League>>("/v1/leagues", {
+      request<League>("/v1/leagues", {
         method: "POST",
         body: JSON.stringify(body),
       }),
     leaderboard: (leagueId: string) =>
-      request<ApiResponse<LeagueMember[]>>(`/v1/leagues/${leagueId}/leaderboard`),
+      request<LeagueMember[]>(`/v1/leagues/${leagueId}/leaderboard`),
     publicLeaderboard: (slug: string) =>
-      request<ApiResponse<[League, MemberSummary[]]>>(`/v1/public/leagues/${slug}`),
+      request<[League, MemberSummary[]]>(`/v1/public/leagues/${slug}`),
   },
   invites: {
     create: (leagueId: string, adminId: string) =>
-      request<ApiResponse<Invite>>(`/v1/leagues/${leagueId}/invites`, {
+      request<Invite>(`/v1/leagues/${leagueId}/invites`, {
         method: "POST",
         body: JSON.stringify({ admin_id: adminId }),
       }),
     accept: (token: string, userId: string) =>
-      request<ApiResponse<LeagueMember>>(`/v1/invites/${token}/accept`, {
+      request<LeagueMember>(`/v1/invites/${token}/accept`, {
         method: "POST",
         body: JSON.stringify({ user_id: userId }),
       }),
   },
   matches: {
     list: (leagueId: string) =>
-      request<ApiResponse<Match[]>>(`/v1/leagues/${leagueId}/matches`),
+      request<Match[]>(`/v1/leagues/${leagueId}/matches`),
     log: (
       leagueId: string,
       body: { reported_by_id: string; winner_id: string; loser_id: string },
     ) =>
-      request<ApiResponse<Match>>(`/v1/leagues/${leagueId}/matches`, {
+      request<Match>(`/v1/leagues/${leagueId}/matches`, {
         method: "POST",
         body: JSON.stringify(body),
       }),
     confirm: (leagueId: string, matchId: string, actorId: string) =>
-      request<ApiResponse<Match>>(`/v1/leagues/${leagueId}/matches/${matchId}/confirm`, {
+      request<Match>(`/v1/leagues/${leagueId}/matches/${matchId}/confirm`, {
         method: "POST",
         body: JSON.stringify({ actor_id: actorId }),
       }),
     dispute: (leagueId: string, matchId: string, actorId: string, note?: string) =>
-      request<ApiResponse<Match>>(`/v1/leagues/${leagueId}/matches/${matchId}/dispute`, {
+      request<Match>(`/v1/leagues/${leagueId}/matches/${matchId}/dispute`, {
         method: "POST",
         body: JSON.stringify({ actor_id: actorId, note }),
       }),
     reject: (leagueId: string, matchId: string, actorId: string) =>
-      request<ApiResponse<Match>>(`/v1/leagues/${leagueId}/matches/${matchId}/reject`, {
+      request<Match>(`/v1/leagues/${leagueId}/matches/${matchId}/reject`, {
         method: "POST",
         body: JSON.stringify({ actor_id: actorId }),
       }),
   },
   ratings: {
     history: (leagueId: string, userId: string) =>
-      request<ApiResponse<RatingHistoryEntry[]>>(
+      request<RatingHistoryEntry[]>(
         `/v1/leagues/${leagueId}/players/${userId}/rating-history`,
       ),
   },

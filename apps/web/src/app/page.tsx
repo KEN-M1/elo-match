@@ -1,11 +1,14 @@
 import Link from "next/link";
 
+import { SignInButton } from "./auth/sign-in-button";
+
 export default function HomePage() {
   return (
     <main className="shell">
       <nav className="topbar">
         <div className="brand">RankKit</div>
         <div className="actions">
+          <SignInButton />
           <Link className="button secondary" href="/dashboard">
             Dashboard
           </Link>

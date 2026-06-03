@@ -17,8 +17,8 @@ export function PublicLeagueClient({ slug }: { slug: string }) {
       .publicLeaderboard(slug)
       .then((response) => {
         if (!isMounted) return;
-        setLeague(response.data[0]);
-        setMembers(response.data[1]);
+        setLeague(response[0]);
+        setMembers(response[1]);
       })
       .catch((publicError) => {
         if (!isMounted) return;

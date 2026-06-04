@@ -45,6 +45,7 @@ a {
 }
 
 .grid {
+  align-items: start;
   display: grid;
   gap: 16px;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -55,6 +56,12 @@ a {
   border: 1px solid #d9e2dc;
   border-radius: 8px;
   padding: 20px;
+}
+
+.scroll-panel {
+  max-height: calc(100vh - 166px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .button {

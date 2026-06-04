@@ -83,7 +83,7 @@ export function DashboardClient() {
           <p className={`status ${error ? "error" : ""}`}>{error ?? status}</p>
         </article>
 
-        <article className="panel">
+        <article className="panel scroll-panel">
           <h2>Leagues</h2>
           <div className="stack">
             {leagues.length === 0 ? (

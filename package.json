@@ -8,6 +8,7 @@
     "dev:backend": "powershell -ExecutionPolicy Bypass -File scripts/dev-backend.ps1",
     "dev:web": "powershell -ExecutionPolicy Bypass -File scripts/dev-web.ps1",
     "db:migrate": "powershell -ExecutionPolicy Bypass -File scripts/migrate-db.ps1",
+    "db:smoke": "powershell -ExecutionPolicy Bypass -File scripts/smoke-db.ps1",
     "db:sql": "powershell -ExecutionPolicy Bypass -File scripts/migration-sql.ps1",
     "db:verify": "powershell -ExecutionPolicy Bypass -File scripts/verify-db.ps1",
     "reset:local": "powershell -ExecutionPolicy Bypass -File scripts/reset-local-data.ps1",

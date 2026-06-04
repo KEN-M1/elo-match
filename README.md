@@ -83,6 +83,12 @@ Verify the local database migration version and tables:
 pnpm run db:verify
 ```
 
+Run the backend SQLAlchemy smoke check against the migrated database:
+
+```powershell
+pnpm run db:smoke
+```
+
 ## Demo Path
 
 1. In one PowerShell window, run `pnpm run dev:backend`.

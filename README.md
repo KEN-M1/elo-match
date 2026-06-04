@@ -77,6 +77,12 @@ Apply migrations to a configured Postgres database:
 pnpm run db:migrate
 ```
 
+Verify the local database migration version and tables:
+
+```powershell
+pnpm run db:verify
+```
+
 ## Demo Path
 
 1. In one PowerShell window, run `pnpm run dev:backend`.

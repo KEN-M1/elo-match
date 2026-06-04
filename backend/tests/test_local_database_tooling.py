@@ -23,6 +23,10 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "powershell -ExecutionPolicy Bypass -File scripts/migration-sql.ps1",
             scripts["db:sql"],
         )
+        self.assertEqual(
+            "powershell -ExecutionPolicy Bypass -File scripts/verify-db.ps1",
+            scripts["db:verify"],
+        )
 
     def test_compose_file_defines_rankkit_postgres(self) -> None:
         compose = (REPO_ROOT / "compose.yaml").read_text(encoding="utf-8")
@@ -41,9 +45,15 @@ class LocalDatabaseToolingTests(unittest.TestCase):
         self.assertIn("-m alembic upgrade head --sql", sql_script)
 
     def test_database_scripts_propagate_native_command_failures(self) -> None:
-        for script_name in ["dev-db.ps1", "migrate-db.ps1", "migration-sql.ps1"]:
+        for script_name in ["dev-db.ps1", "migrate-db.ps1", "migration-sql.ps1", "verify-db.ps1"]:
             script = (REPO_ROOT / "scripts" / script_name).read_text(encoding="utf-8")
             self.assertIn("if ($LASTEXITCODE -ne 0)", script)
+
+    def test_verify_db_script_checks_alembic_version_and_tables(self) -> None:
+        script = (REPO_ROOT / "scripts" / "verify-db.ps1").read_text(encoding="utf-8")
+
+        self.assertIn("select version_num from alembic_version", script)
+        self.assertIn("information_schema.tables", script)
 
 
 if __name__ == "__main__":

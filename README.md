@@ -21,8 +21,8 @@ pnpm run dev:backend
 ```
 
 The current MVP demo uses a local JSON snapshot at `backend/data/rankkit-local.json` so demo
-leagues survive backend restarts. PostgreSQL is documented for the planned production persistence
-slice.
+leagues survive backend restarts. A PostgreSQL adapter is also available behind a smoke command
+while runtime traffic remains on the local snapshot store.
 
 ## Local Web
 
@@ -33,6 +33,23 @@ pnpm run dev:web
 The web script writes `apps/web/.env.local` with `NEXT_PUBLIC_API_URL=http://localhost:8002`.
 If `.env.local` already exists, the script preserves OAuth values and only updates that API URL.
 That avoids stale dev servers that may still be listening on older API ports.
+
+## Google OAuth Setup
+
+The product shell supports Google OAuth through NextAuth. For local OAuth sign-in, create
+`apps/web/.env.local` with these values before running `pnpm run dev:web`:
+
+```powershell
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+NEXTAUTH_SECRET=generate-a-local-secret
+NEXTAUTH_URL=http://localhost:3000
+NEXT_PUBLIC_API_URL=http://localhost:8002
+```
+
+Configure the Google OAuth client with `http://localhost:3000/api/auth/callback/google` as an
+authorized redirect URI. The dev web script preserves OAuth values and refreshes only
+`NEXT_PUBLIC_API_URL`.
 
 ## Tests
 
@@ -56,8 +73,8 @@ pnpm exec playwright install chromium
 
 ## Database Migrations
 
-Runtime persistence still uses the local Store Snapshot for the MVP, but the future Postgres schema
-is tracked with Alembic.
+Runtime persistence still uses the local Store Snapshot for the MVP, but the Postgres schema is
+tracked with Alembic and exercised by the adapter smoke path.
 
 Start a local Postgres container:
 
@@ -89,6 +106,20 @@ Run the backend SQLAlchemy smoke check against the migrated database:
 pnpm run db:smoke
 ```
 
+## Postgres Adapter Smoke
+
+`pnpm run db:smoke` runs the SQLAlchemy adapter through the local RankKit lifecycle inside a
+rolled-back transaction:
+
+- sync owner and opponent users
+- create a public league
+- create and accept an invite
+- log a `PENDING` match
+- confirm it as `COMPLETED` and verify `1016.0 / 984.0` ratings
+- log a second match, move it to `DISPUTED`, then `REJECTED`
+- verify rejected matches do not add rating-history rows
+- read the public leaderboard and player rating history
+
 ## Demo Path
 
 1. In one PowerShell window, run `pnpm run dev:backend`.
@@ -98,6 +129,26 @@ pnpm run db:smoke
 5. Open `http://localhost:3000/demo` for the one-click happy path.
 
 The `/demo` route uses local user sync instead of Google OAuth so the MVP loop is demoable before the production auth slice.
+
+## Demo Readiness Checklist
+
+Before demoing from a fresh checkout, run:
+
+```powershell
+pnpm test
+pnpm run db:smoke
+pnpm run test:e2e
+```
+
+Then start the app:
+
+```powershell
+pnpm run dev:backend
+pnpm run dev:web
+```
+
+Use `http://localhost:3000/demo` for a one-click happy path and `http://localhost:3000/dashboard`
+for the full local product flow.
 
 ## Reset Local Data
 

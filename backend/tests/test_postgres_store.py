@@ -10,11 +10,16 @@ class PostgresStoreTests(unittest.TestCase):
             "confirm_match",
             "create_invite",
             "create_league",
+            "dispute_match",
             "get_league",
             "league_matches",
             "leaderboard",
             "list_leagues",
             "log_match",
+            "member_summaries",
+            "player_rating_history",
+            "public_leaderboard",
+            "reject_match",
             "sync_user",
         }
 

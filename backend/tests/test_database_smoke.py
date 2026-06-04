@@ -50,6 +50,23 @@ class DatabaseSmokeTests(unittest.TestCase):
         self.assertIn("loser_rating", fields)
         self.assertIn("rating_history_count", fields)
 
+    def test_write_round_trip_reports_dispute_resolution_contract(self) -> None:
+        fields = WriteSmokeResult.__dataclass_fields__
+
+        self.assertIn("disputed_match_status", fields)
+        self.assertIn("rejected_match_status", fields)
+
+    def test_write_round_trip_reports_public_leaderboard_contract(self) -> None:
+        fields = WriteSmokeResult.__dataclass_fields__
+
+        self.assertIn("public_leaderboard_count", fields)
+
+    def test_write_round_trip_reports_player_rating_history_contract(self) -> None:
+        fields = WriteSmokeResult.__dataclass_fields__
+
+        self.assertIn("player_history_count", fields)
+        self.assertIn("player_latest_rating", fields)
+
 
 if __name__ == "__main__":
     unittest.main()

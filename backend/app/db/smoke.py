@@ -29,9 +29,14 @@ class WriteSmokeResult:
     member_count: int
     match_status: str
     confirmed_match_status: str
+    disputed_match_status: str
+    rejected_match_status: str
     winner_rating: float
     loser_rating: float
     rating_history_count: int
+    public_leaderboard_count: int
+    player_history_count: int
+    player_latest_rating: float
 
 
 async def check_database() -> tuple[str, set[str]]:
@@ -130,15 +135,62 @@ async def check_write_round_trip(connection) -> WriteSmokeResult:
             or history_count != 4
         ):
             raise RuntimeError("RankKit database smoke write could not confirm and rate the match.")
+        disputed_seed = await store.log_match(
+            league_id=league.id,
+            reported_by_id=user.id,
+            winner_id=user.id,
+            loser_id=opponent.id,
+        )
+        disputed = await store.dispute_match(disputed_seed.id, opponent.id, "Smoke dispute")
+        rejected = await store.reject_match(disputed.id, user.id)
+        rejected_leaderboard = await store.leaderboard(league.id)
+        rejected_history_count = (
+            await connection.execute(
+                select(func.count())
+                .select_from(rating_history)
+                .where(rating_history.c.league_id == league.id)
+            )
+        ).scalar_one()
+        if (
+            disputed.status != "DISPUTED"
+            or rejected.status != "REJECTED"
+            or rejected_leaderboard[0].rating != 1016.0
+            or rejected_leaderboard[1].rating != 984.0
+            or rejected_history_count != history_count
+        ):
+            raise RuntimeError("RankKit database smoke write could not reject a disputed match.")
+        public_league, public_standings = await store.public_leaderboard(smoke_slug)
+        if (
+            public_league.id != league.id
+            or len(public_standings) != 2
+            or public_standings[0].email != user.email
+            or public_standings[0].rating != 1016.0
+            or public_standings[1].email != opponent.email
+        ):
+            raise RuntimeError("RankKit database smoke write could not read the public leaderboard.")
+        player_history = await store.player_rating_history(league.id, user.id)
+        if (
+            len(player_history) != 2
+            or player_history[0].rating != 1000.0
+            or player_history[0].match_id is not None
+            or player_history[-1].rating != 1016.0
+            or player_history[-1].match_id != match.id
+        ):
+            raise RuntimeError("RankKit database smoke write could not read player rating history.")
         return WriteSmokeResult(
             user_id=user.id,
             league_slug=fetched.slug,
             member_count=len(opponent_leagues) + 1,
             match_status=match.status,
             confirmed_match_status=confirmed.status,
+            disputed_match_status=disputed.status,
+            rejected_match_status=rejected.status,
             winner_rating=leaderboard[0].rating,
             loser_rating=leaderboard[1].rating,
             rating_history_count=history_count,
+            public_leaderboard_count=len(public_standings),
+            player_history_count=len(player_history),
+            player_latest_rating=player_history[-1].rating,
         )
     finally:
         await transaction.rollback()
@@ -161,8 +213,13 @@ async def main() -> None:
     print(f"Write smoke members: {write_result.member_count}")
     print(f"Write smoke match status: {write_result.match_status}")
     print(f"Write smoke confirmed status: {write_result.confirmed_match_status}")
+    print(f"Write smoke disputed status: {write_result.disputed_match_status}")
+    print(f"Write smoke rejected status: {write_result.rejected_match_status}")
     print(f"Write smoke ratings: {write_result.winner_rating} / {write_result.loser_rating}")
     print(f"Write smoke rating history rows: {write_result.rating_history_count}")
+    print(f"Write smoke public leaderboard rows: {write_result.public_leaderboard_count}")
+    print(f"Write smoke player history rows: {write_result.player_history_count}")
+    print(f"Write smoke player latest rating: {write_result.player_latest_rating}")
 
 
 if __name__ == "__main__":

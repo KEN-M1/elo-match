@@ -7,7 +7,17 @@ from uuid import uuid4
 from sqlalchemy import insert, select, update
 
 from app.db.schema import invites, league_members, leagues, matches, rating_history, users
-from app.domain import Invite, League, LeagueMember, Match, MatchStatus, RankKitError, User
+from app.domain import (
+    Invite,
+    League,
+    LeagueMember,
+    Match,
+    MatchStatus,
+    MemberSummary,
+    RankKitError,
+    RatingHistoryEntry,
+    User,
+)
 from app.rating import EloResult, calculate_elo
 
 
@@ -307,6 +317,43 @@ class PostgresStore:
         match.rating_result = result
         return match
 
+    async def dispute_match(self, match_id: str, actor_id: str, note: str | None = None) -> Match:
+        match = await self._require_match(match_id)
+        if match.status != MatchStatus.PENDING:
+            raise RankKitError("Only pending matches can be disputed.")
+        if actor_id == match.reported_by_id:
+            raise RankKitError("Reporter cannot dispute their own match.")
+        if actor_id not in {match.winner_id, match.loser_id}:
+            raise RankKitError("Only a participant can dispute this match.")
+
+        await self.connection.execute(
+            update(matches)
+            .where(matches.c.id == match.id)
+            .values(
+                status=MatchStatus.DISPUTED.value,
+                disputed_by_id=actor_id,
+                dispute_note=note,
+            )
+        )
+        match.status = MatchStatus.DISPUTED
+        match.disputed_by_id = actor_id
+        match.dispute_note = note
+        return match
+
+    async def reject_match(self, match_id: str, admin_id: str) -> Match:
+        match = await self._require_match(match_id)
+        await self._require_admin(match.league_id, admin_id)
+        if match.status != MatchStatus.DISPUTED:
+            raise RankKitError("Only disputed matches can be rejected.")
+
+        await self.connection.execute(
+            update(matches)
+            .where(matches.c.id == match.id)
+            .values(status=MatchStatus.REJECTED.value)
+        )
+        match.status = MatchStatus.REJECTED
+        return match
+
     async def leaderboard(self, league_id: str) -> list[LeagueMember]:
         await self.get_league(league_id)
         rows = (
@@ -317,6 +364,56 @@ class PostgresStore:
             )
         ).mappings().all()
         return [_league_member_from_row(row) for row in rows]
+
+    async def member_summaries(self, league_id: str) -> list[MemberSummary]:
+        await self.get_league(league_id)
+        rows = (
+            await self.connection.execute(
+                select(
+                    league_members.c.league_id,
+                    league_members.c.user_id,
+                    users.c.email,
+                    users.c.name,
+                    league_members.c.role,
+                    league_members.c.rating,
+                    league_members.c.wins,
+                    league_members.c.losses,
+                    league_members.c.joined_at,
+                )
+                .join(users, users.c.id == league_members.c.user_id)
+                .where(league_members.c.league_id == league_id)
+                .order_by(league_members.c.rating.desc(), league_members.c.joined_at.asc())
+            )
+        ).mappings().all()
+        return [_member_summary_from_row(row) for row in rows]
+
+    async def public_leaderboard(self, slug: str) -> tuple[League, list[MemberSummary]]:
+        row = (
+            await self.connection.execute(
+                select(leagues).where(
+                    leagues.c.slug == slug,
+                    leagues.c.is_public.is_(True),
+                )
+            )
+        ).mappings().first()
+        if row is None:
+            raise RankKitError("Public league was not found.")
+        league = _league_from_row(row)
+        return league, await self.member_summaries(league.id)
+
+    async def player_rating_history(self, league_id: str, user_id: str) -> list[RatingHistoryEntry]:
+        await self._require_member(league_id, user_id)
+        rows = (
+            await self.connection.execute(
+                select(rating_history)
+                .where(
+                    rating_history.c.league_id == league_id,
+                    rating_history.c.user_id == user_id,
+                )
+                .order_by(rating_history.c.recorded_at.asc(), rating_history.c.id.asc())
+            )
+        ).mappings().all()
+        return [_rating_history_entry_from_row(row) for row in rows]
 
     async def _require_match(self, match_id: str) -> Match:
         row = (
@@ -389,6 +486,30 @@ def _league_member_from_row(row) -> LeagueMember:
         wins=row["wins"],
         losses=row["losses"],
         joined_at=row["joined_at"],
+    )
+
+
+def _member_summary_from_row(row) -> MemberSummary:
+    return MemberSummary(
+        league_id=row["league_id"],
+        user_id=row["user_id"],
+        email=row["email"],
+        name=row["name"],
+        role=row["role"],
+        rating=row["rating"],
+        wins=row["wins"],
+        losses=row["losses"],
+        joined_at=row["joined_at"],
+    )
+
+
+def _rating_history_entry_from_row(row) -> RatingHistoryEntry:
+    return RatingHistoryEntry(
+        user_id=row["user_id"],
+        league_id=row["league_id"],
+        match_id=row["match_id"],
+        rating=row["rating"],
+        recorded_at=row["recorded_at"],
     )
 
 

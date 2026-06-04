@@ -40,6 +40,11 @@ class LocalDatabaseToolingTests(unittest.TestCase):
         self.assertIn("-m alembic upgrade head", migrate_script)
         self.assertIn("-m alembic upgrade head --sql", sql_script)
 
+    def test_database_scripts_propagate_native_command_failures(self) -> None:
+        for script_name in ["dev-db.ps1", "migrate-db.ps1", "migration-sql.ps1"]:
+            script = (REPO_ROOT / "scripts" / script_name).read_text(encoding="utf-8")
+            self.assertIn("if ($LASTEXITCODE -ne 0)", script)
+
 
 if __name__ == "__main__":
     unittest.main()

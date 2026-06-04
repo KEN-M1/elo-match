@@ -17,7 +17,13 @@ if (-not (Test-Path -LiteralPath $python)) {
 Push-Location $backendRoot
 try {
   & $python -m pip install -r requirements-dev.txt
+  if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+  }
   & $python -m alembic upgrade head --sql
+  if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+  }
 } finally {
   Pop-Location
 }

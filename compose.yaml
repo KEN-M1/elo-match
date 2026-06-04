@@ -1,7 +1,6 @@
 services:
   rankkit-postgres:
     image: postgres:16-alpine
-    container_name: rankkit-postgres
     environment:
       POSTGRES_DB: rankkit
       POSTGRES_USER: rankkit

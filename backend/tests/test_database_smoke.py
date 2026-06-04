@@ -2,7 +2,7 @@ import json
 import unittest
 from pathlib import Path
 
-from app.db.smoke import EXPECTED_TABLES
+from app.db.smoke import EXPECTED_TABLES, check_write_round_trip
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -36,6 +36,52 @@ class DatabaseSmokeTests(unittest.TestCase):
 
         self.assertIn("-m app.db.smoke", script)
         self.assertIn("if ($LASTEXITCODE -ne 0)", script)
+
+    def test_write_round_trip_rolls_back_smoke_data(self) -> None:
+        connection = FakeConnection(count=1)
+
+        result = run(check_write_round_trip(connection))
+
+        self.assertEqual("rankkit-smoke-user", result.user_id)
+        self.assertEqual("rankkit-smoke-league", result.league_slug)
+        self.assertEqual(5, len(connection.executed_statements))
+        self.assertTrue(connection.transaction.rolled_back)
+
+
+def run(coroutine):
+    import asyncio
+
+    return asyncio.run(coroutine)
+
+
+class FakeResult:
+    def __init__(self, count: int) -> None:
+        self.count = count
+
+    def scalar_one(self) -> int:
+        return self.count
+
+
+class FakeTransaction:
+    def __init__(self) -> None:
+        self.rolled_back = False
+
+    async def rollback(self) -> None:
+        self.rolled_back = True
+
+
+class FakeConnection:
+    def __init__(self, count: int) -> None:
+        self.count = count
+        self.transaction = FakeTransaction()
+        self.executed_statements = []
+
+    async def begin(self) -> FakeTransaction:
+        return self.transaction
+
+    async def execute(self, statement) -> FakeResult:
+        self.executed_statements.append(statement)
+        return FakeResult(self.count)
 
 
 if __name__ == "__main__":

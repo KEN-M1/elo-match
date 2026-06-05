@@ -1,4 +1,5 @@
 import unittest
+from asyncio import run
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -9,7 +10,7 @@ from app.config import Settings
 from app.domain import RankKitStore, User
 from app.main import create_app
 from app.route_policy import RoutePolicy
-from app.runtime import RankKitRuntime, create_runtime
+from app.runtime import PostgresRuntimeStore, RankKitRuntime, create_runtime
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -23,6 +24,7 @@ class RuntimeTests(unittest.TestCase):
                 Settings(
                     local_data_path=str(data_path),
                     database_url="postgresql+asyncpg://rankkit:rankkit@localhost:5432/rankkit",
+                    store_backend="local",
                 )
             )
 
@@ -31,6 +33,27 @@ class RuntimeTests(unittest.TestCase):
 
             hydrated = RankKitStore(data_path)
             self.assertEqual(hydrated.get_user(user.id).email, "runtime@example.com")
+
+    def test_create_runtime_can_select_postgres_store_backend(self) -> None:
+        runtime = create_runtime(
+            Settings(
+                database_url="postgresql+asyncpg://rankkit:rankkit@localhost:5432/rankkit",
+                store_backend="postgres",
+            )
+        )
+
+        self.assertIsInstance(runtime.store, PostgresRuntimeStore)
+        self.assertEqual(runtime.store.database_url, "postgresql+asyncpg://rankkit:rankkit@localhost:5432/rankkit")
+        run(runtime.store.close())
+
+    def test_create_runtime_rejects_unknown_store_backend(self) -> None:
+        with self.assertRaisesRegex(ValueError, "STORE_BACKEND"):
+            create_runtime(
+                Settings(
+                    database_url="postgresql+asyncpg://rankkit:rankkit@localhost:5432/rankkit",
+                    store_backend="bogus",
+                )
+            )
 
     def test_create_app_uses_injected_runtime_store(self) -> None:
         class ProbeStore:
@@ -54,6 +77,26 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["data"]["id"], "probe-user")
         self.assertEqual(probe_store.synced_email, "probe@example.com")
+
+    def test_create_app_closes_runtime_store_on_shutdown(self) -> None:
+        class ClosableStore:
+            def __init__(self) -> None:
+                self.closed = False
+
+            def close(self) -> None:
+                self.closed = True
+
+        store = ClosableStore()
+        runtime = RankKitRuntime(
+            store=store,
+            auth_session=AuthSession(),
+            route_policy=RoutePolicy(),
+        )
+
+        with TestClient(create_app(runtime)):
+            pass
+
+        self.assertTrue(store.closed)
 
     def test_main_module_does_not_hardwire_local_snapshot_store(self) -> None:
         main_source = (REPO_ROOT / "backend" / "app" / "main.py").read_text(encoding="utf-8")

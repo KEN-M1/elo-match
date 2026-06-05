@@ -73,10 +73,23 @@ pnpm exec playwright install chromium
 
 ## Database Migrations
 
-Runtime persistence still uses the local Store Snapshot for the MVP, but the Postgres schema is
-tracked with Alembic and exercised by the adapter smoke path.
+Runtime persistence defaults to the local Store Snapshot for demos, but the backend can select a
+Runtime Store Backend with `STORE_BACKEND`.
 The backend app now builds its Store adapter, Auth Session, and Route Policy through Runtime
 Composition, so production wiring can switch runtime dependencies without rewriting route handlers.
+
+Use local snapshot persistence:
+
+```powershell
+STORE_BACKEND=local
+```
+
+Use Postgres runtime persistence after applying migrations:
+
+```powershell
+STORE_BACKEND=postgres
+DATABASE_URL=postgresql+asyncpg://rankkit:rankkit@localhost:5432/rankkit
+```
 
 Start a local Postgres container:
 

@@ -1,4 +1,5 @@
 import unittest
+from asyncio import run
 from pathlib import Path
 
 from fastapi import HTTPException
@@ -32,19 +33,23 @@ class RoutePolicyTests(unittest.TestCase):
 
         policy = RoutePolicy()
 
-        self.assertEqual(policy.data_response(lambda: "ok"), {"data": "ok"})
+        self.assertEqual(run(policy.data_response(lambda: "ok")), {"data": "ok"})
+        self.assertEqual(run(policy.data_response(lambda: _async_value("async-ok"))), {"data": "async-ok"})
 
         with self.assertRaises(HTTPException) as missing_header:
-            policy.auth_response(lambda: (_ for _ in ()).throw(MissingLocalUserHeader("Missing user header for local MVP.")))
+            run(policy.auth_response(lambda: (_ for _ in ()).throw(MissingLocalUserHeader("Missing user header for local MVP."))))
         self.assertEqual(missing_header.exception.status_code, 401)
 
         with self.assertRaises(HTTPException) as missing_user:
-            policy.auth_response(lambda: (_ for _ in ()).throw(RankKitError("User was not found.")))
+            run(policy.auth_response(lambda: (_ for _ in ()).throw(RankKitError("User was not found."))))
         self.assertEqual(missing_user.exception.status_code, 404)
 
         with self.assertRaises(HTTPException) as domain_error:
-            policy.data_response(lambda: (_ for _ in ()).throw(RankKitError("League was not found.")))
+            run(policy.data_response(lambda: (_ for _ in ()).throw(RankKitError("League was not found."))))
         self.assertEqual(domain_error.exception.status_code, 400)
+
+async def _async_value(value: str) -> str:
+    return value
 
 
 if __name__ == "__main__":

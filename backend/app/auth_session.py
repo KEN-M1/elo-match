@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from inspect import isawaitable
 from typing import Callable, Protocol
 
 from app.auth import AuthenticatedPrincipal, verify_bearer_token
@@ -25,7 +26,7 @@ class AuthSession:
     ) -> None:
         self.verify_token = verify_token
 
-    def current_user(
+    async def current_user(
         self,
         store: UserStore,
         authorization: str | None,
@@ -33,13 +34,21 @@ class AuthSession:
     ) -> User:
         principal = self.verify_token(authorization)
         if principal is not None:
-            return store.sync_user(
-                email=principal.email,
-                name=principal.name,
-                image=principal.image,
+            return await _resolve(
+                store.sync_user(
+                    email=principal.email,
+                    name=principal.name,
+                    image=principal.image,
+                )
             )
 
         if not local_user_id:
             raise MissingLocalUserHeader("Missing user header for local MVP.")
 
-        return store.get_user(local_user_id)
+        return await _resolve(store.get_user(local_user_id))
+
+
+async def _resolve(value):
+    if isawaitable(value):
+        return await value
+    return value

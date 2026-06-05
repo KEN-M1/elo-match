@@ -2,31 +2,15 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { League, LeagueMember, Match, RatingHistoryEntry, User } from "@rankkit/types";
+import type { RatingHistoryEntry } from "@rankkit/types";
 
-import { api } from "../../lib/api";
-
-type DemoState = {
-  owner?: User;
-  opponent?: User;
-  league?: League;
-  members: LeagueMember[];
-  match?: Match;
-  ownerHistory: RatingHistoryEntry[];
-  opponentHistory: RatingHistoryEntry[];
-};
-
-const initialState: DemoState = {
-  members: [],
-  ownerHistory: [],
-  opponentHistory: [],
-};
+import { emptyDemoState, runLocalDemo } from "../../lib/local-demo-flow";
 
 export function DemoClient() {
   const [ownerEmail, setOwnerEmail] = useState("owner@example.com");
   const [opponentEmail, setOpponentEmail] = useState("opponent@example.com");
   const [leagueName, setLeagueName] = useState("Friday Ladder");
-  const [state, setState] = useState<DemoState>(initialState);
+  const [state, setState] = useState(emptyDemoState);
   const [status, setStatus] = useState("Ready to run the local MVP flow.");
   const [error, setError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
@@ -41,47 +25,20 @@ export function DemoClient() {
   async function runDemo() {
     setIsRunning(true);
     setError(null);
-    setStatus("Syncing demo users...");
 
     try {
-      const slug = `${slugify(leagueName)}-${Date.now().toString(36)}`;
-      const owner = await api.auth.sync({ email: ownerEmail, name: "Owner" });
-      const opponent = await api.auth.sync({ email: opponentEmail, name: "Opponent" });
+      const demoState = await runLocalDemo(
+        {
+          ownerEmail,
+          opponentEmail,
+          leagueName,
+        },
+        {
+          onStatus: setStatus,
+        },
+      );
 
-      setStatus("Creating league...");
-      const league = await api.leagues.create({
-        owner_id: owner.id,
-        name: leagueName,
-        slug,
-        is_public: true,
-      });
-
-      setStatus("Creating invite and accepting as opponent...");
-      const invite = await api.invites.create(league.id, owner.id);
-      await api.invites.accept(invite.token, opponent.id);
-
-      setStatus("Logging match...");
-      const match = await api.matches.log(league.id, {
-        reported_by_id: owner.id,
-        winner_id: owner.id,
-        loser_id: opponent.id,
-      });
-
-      setStatus("Confirming match as opponent...");
-      const confirmed = await api.matches.confirm(league.id, match.id, opponent.id);
-      const members = await api.leagues.leaderboard(league.id);
-      const ownerHistory = await api.ratings.history(league.id, owner.id);
-      const opponentHistory = await api.ratings.history(league.id, opponent.id);
-
-      setState({
-        owner,
-        opponent,
-        league,
-        members,
-        match: confirmed,
-        ownerHistory,
-        opponentHistory,
-      });
+      setState(demoState);
       setStatus("Demo complete. Ratings moved only after opponent confirmation.");
     } catch (demoError) {
       setError(demoError instanceof Error ? demoError.message : "Demo failed.");
@@ -209,14 +166,5 @@ function HistoryPanel({ label, rows }: { label: string; rows: RatingHistoryEntry
         </tbody>
       </table>
     </article>
-  );
-}
-
-function slugify(value: string) {
-  return (
-    value
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "") || "rankkit"
   );
 }

@@ -20,6 +20,7 @@
 - **Public League Page**: A read-only leaderboard reachable by slug without auth when public.
 - **Store Snapshot**: The persisted local JSON representation of RankKit users, leagues, members, invites, matches, and rating history.
 - **League Workspace**: The authenticated league management surface that loads league state and coordinates invites, local actor selection, match logging, confirmations, disputes, and rating history.
+- **Local Demo Flow**: The web module that runs the one-click MVP path by syncing demo users, creating a league, accepting an invite, logging and confirming a match, and loading standings/history.
 - **Authenticated Actor**: The current browser user, resolved from Google OAuth or the local demo fallback, who performs league and match actions.
 - **Auth Session**: The backend module that resolves the current User from either a verified bearer token or the local demo user header before route handlers perform application work.
 - **RankKit Client**: The web module that converts backend transport responses into RankKit domain values for screens and workflows.

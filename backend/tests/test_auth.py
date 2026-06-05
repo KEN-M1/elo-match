@@ -5,14 +5,16 @@ import jwt
 from fastapi.testclient import TestClient
 
 from app import main as main_module
+from app.auth_session import AuthSession
 from app.config import settings
 from app.domain import RankKitStore, User
+from app.route_policy import RoutePolicy
+from app.runtime import RankKitRuntime
 
 
 class AuthTests(unittest.TestCase):
     def setUp(self) -> None:
-        main_module.store = RankKitStore()
-        self.client = TestClient(main_module.create_app())
+        self.client = TestClient(main_module.create_app(_runtime(RankKitStore())))
 
     def test_me_syncs_user_from_valid_bearer_token(self) -> None:
         token = jwt.encode(
@@ -52,14 +54,21 @@ class AuthTests(unittest.TestCase):
                 return User(id=user_id, email="local@example.com", name="Local")
 
         probe_store = ProbeStore()
-        main_module.store = probe_store
-        client = TestClient(main_module.create_app(), raise_server_exceptions=False)
+        client = TestClient(main_module.create_app(_runtime(probe_store)), raise_server_exceptions=False)
 
         response = client.get("/v1/auth/me", headers={"X-RankKit-User": "local-user"})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["data"]["email"], "local@example.com")
         self.assertEqual(probe_store.requested_user_id, "local-user")
+
+
+def _runtime(store) -> RankKitRuntime:
+    return RankKitRuntime(
+        store=store,
+        auth_session=AuthSession(),
+        route_policy=RoutePolicy(),
+    )
 
 
 if __name__ == "__main__":

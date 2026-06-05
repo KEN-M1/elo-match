@@ -22,9 +22,8 @@ class RoutePolicyTests(unittest.TestCase):
         self.assertIn("class RoutePolicy", policy_source)
         self.assertIn("def data_response", policy_source)
         self.assertIn("def auth_response", policy_source)
-        self.assertIn("route_policy = RoutePolicy()", main_source)
-        self.assertIn("route_policy.data_response", main_source)
-        self.assertIn("route_policy.auth_response", main_source)
+        self.assertIn("runtime.route_policy.data_response", main_source)
+        self.assertIn("runtime.route_policy.auth_response", main_source)
         self.assertNotIn("def _response", main_source)
         self.assertNotIn("def _auth_response", main_source)
 

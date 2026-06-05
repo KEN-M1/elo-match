@@ -2,14 +2,8 @@ from fastapi import FastAPI, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from app.auth_session import AuthSession
 from app.config import settings
-from app.domain import RankKitStore
-from app.route_policy import RoutePolicy
-
-store = RankKitStore(settings.local_data_path)
-auth_session = AuthSession()
-route_policy = RoutePolicy()
+from app.runtime import RankKitRuntime, create_runtime
 
 
 class SyncUserRequest(BaseModel):
@@ -45,7 +39,8 @@ class ActorRequest(BaseModel):
     note: str | None = None
 
 
-def create_app() -> FastAPI:
+def create_app(runtime: RankKitRuntime | None = None) -> FastAPI:
+    runtime = runtime or create_runtime()
     app = FastAPI(
         title="RankKit API",
         version="0.1.0",
@@ -67,19 +62,21 @@ def create_app() -> FastAPI:
 
     @app.post("/v1/auth/sync")
     def sync_user(body: SyncUserRequest) -> dict:
-        return {"data": store.sync_user(body.email, body.name, body.image)}
+        return {"data": runtime.store.sync_user(body.email, body.name, body.image)}
 
     @app.get("/v1/auth/me")
     def me(
         authorization: str | None = Header(default=None),
         x_rankkit_user: str | None = Header(default=None),
     ) -> dict:
-        return route_policy.auth_response(lambda: auth_session.current_user(store, authorization, x_rankkit_user))
+        return runtime.route_policy.auth_response(
+            lambda: runtime.auth_session.current_user(runtime.store, authorization, x_rankkit_user)
+        )
 
     @app.post("/v1/leagues")
     def create_league(body: CreateLeagueRequest) -> dict:
-        return route_policy.data_response(
-            lambda: store.create_league(
+        return runtime.route_policy.data_response(
+            lambda: runtime.store.create_league(
                 owner_id=body.owner_id,
                 name=body.name,
                 slug=body.slug,
@@ -90,32 +87,32 @@ def create_app() -> FastAPI:
 
     @app.get("/v1/leagues")
     def list_leagues(user_id: str | None = None) -> dict:
-        return route_policy.data_response(lambda: store.list_leagues(user_id))
+        return runtime.route_policy.data_response(lambda: runtime.store.list_leagues(user_id))
 
     @app.get("/v1/leagues/{league_id}")
     def get_league(league_id: str) -> dict:
-        return route_policy.data_response(lambda: store.get_league(league_id))
+        return runtime.route_policy.data_response(lambda: runtime.store.get_league(league_id))
 
     @app.get("/v1/leagues/{league_id}/leaderboard")
     def leaderboard(league_id: str) -> dict:
-        return route_policy.data_response(lambda: store.leaderboard(league_id))
+        return runtime.route_policy.data_response(lambda: runtime.store.leaderboard(league_id))
 
     @app.get("/v1/leagues/{league_id}/members")
     def members(league_id: str) -> dict:
-        return route_policy.data_response(lambda: store.member_summaries(league_id))
+        return runtime.route_policy.data_response(lambda: runtime.store.member_summaries(league_id))
 
     @app.post("/v1/leagues/{league_id}/invites")
     def create_invite(league_id: str, body: CreateInviteRequest) -> dict:
-        return route_policy.data_response(lambda: store.create_invite(league_id, body.admin_id))
+        return runtime.route_policy.data_response(lambda: runtime.store.create_invite(league_id, body.admin_id))
 
     @app.post("/v1/invites/{token}/accept")
     def accept_invite(token: str, body: AcceptInviteRequest) -> dict:
-        return route_policy.data_response(lambda: store.accept_invite(token, body.user_id))
+        return runtime.route_policy.data_response(lambda: runtime.store.accept_invite(token, body.user_id))
 
     @app.post("/v1/leagues/{league_id}/matches")
     def log_match(league_id: str, body: LogMatchRequest) -> dict:
-        return route_policy.data_response(
-            lambda: store.log_match(
+        return runtime.route_policy.data_response(
+            lambda: runtime.store.log_match(
                 league_id=league_id,
                 reported_by_id=body.reported_by_id,
                 winner_id=body.winner_id,
@@ -125,27 +122,29 @@ def create_app() -> FastAPI:
 
     @app.get("/v1/leagues/{league_id}/matches")
     def list_matches(league_id: str) -> dict:
-        return route_policy.data_response(lambda: store.league_matches(league_id))
+        return runtime.route_policy.data_response(lambda: runtime.store.league_matches(league_id))
 
     @app.post("/v1/leagues/{league_id}/matches/{match_id}/confirm")
     def confirm_match(league_id: str, match_id: str, body: ActorRequest) -> dict:
-        return route_policy.data_response(lambda: store.confirm_match(match_id, body.actor_id))
+        return runtime.route_policy.data_response(lambda: runtime.store.confirm_match(match_id, body.actor_id))
 
     @app.post("/v1/leagues/{league_id}/matches/{match_id}/dispute")
     def dispute_match(league_id: str, match_id: str, body: ActorRequest) -> dict:
-        return route_policy.data_response(lambda: store.dispute_match(match_id, body.actor_id, body.note))
+        return runtime.route_policy.data_response(
+            lambda: runtime.store.dispute_match(match_id, body.actor_id, body.note)
+        )
 
     @app.post("/v1/leagues/{league_id}/matches/{match_id}/reject")
     def reject_match(league_id: str, match_id: str, body: ActorRequest) -> dict:
-        return route_policy.data_response(lambda: store.reject_match(match_id, body.actor_id))
+        return runtime.route_policy.data_response(lambda: runtime.store.reject_match(match_id, body.actor_id))
 
     @app.get("/v1/public/leagues/{slug}")
     def public_league(slug: str) -> dict:
-        return route_policy.data_response(lambda: store.public_leaderboard(slug))
+        return runtime.route_policy.data_response(lambda: runtime.store.public_leaderboard(slug))
 
     @app.get("/v1/leagues/{league_id}/players/{user_id}/rating-history")
     def rating_history(league_id: str, user_id: str) -> dict:
-        return route_policy.data_response(lambda: store.player_rating_history(league_id, user_id))
+        return runtime.route_policy.data_response(lambda: runtime.store.player_rating_history(league_id, user_id))
 
     return app
 

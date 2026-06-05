@@ -75,6 +75,8 @@ pnpm exec playwright install chromium
 
 Runtime persistence still uses the local Store Snapshot for the MVP, but the Postgres schema is
 tracked with Alembic and exercised by the adapter smoke path.
+The backend app now builds its Store adapter, Auth Session, and Route Policy through Runtime
+Composition, so production wiring can switch runtime dependencies without rewriting route handlers.
 
 Start a local Postgres container:
 

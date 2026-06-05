@@ -3,13 +3,23 @@ import unittest
 from fastapi.testclient import TestClient
 
 from app import main as main_module
+from app.auth_session import AuthSession
 from app.domain import RankKitStore
+from app.route_policy import RoutePolicy
+from app.runtime import RankKitRuntime
 
 
 class ApiDemoFlowTests(unittest.TestCase):
     def setUp(self) -> None:
-        main_module.store = RankKitStore()
-        self.client = TestClient(main_module.create_app())
+        self.client = TestClient(
+            main_module.create_app(
+                RankKitRuntime(
+                    store=RankKitStore(),
+                    auth_session=AuthSession(),
+                    route_policy=RoutePolicy(),
+                )
+            )
+        )
 
     def test_demo_flow_through_http_routes(self) -> None:
         owner = self._sync_user("owner@example.com", "Owner")

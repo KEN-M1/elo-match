@@ -105,7 +105,7 @@ def create_app() -> FastAPI:
 
     @app.get("/v1/leagues/{league_id}")
     def get_league(league_id: str) -> dict:
-        return _response(lambda: store._require_league(league_id))
+        return _response(lambda: store.get_league(league_id))
 
     @app.get("/v1/leagues/{league_id}/leaderboard")
     def leaderboard(league_id: str) -> dict:

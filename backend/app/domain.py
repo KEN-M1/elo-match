@@ -203,6 +203,9 @@ class RankKitStore:
             ]
         return sorted(leagues, key=lambda league: league.name.lower())
 
+    def get_league(self, league_id: str) -> League:
+        return self._require_league(league_id)
+
     def public_leaderboard(self, slug: str) -> tuple[League, list[MemberSummary]]:
         league = next((candidate for candidate in self.leagues.values() if candidate.slug == slug), None)
         if league is None or not league.is_public:

@@ -20,7 +20,7 @@ class LocalPersistenceTests(unittest.TestCase):
             first_store.confirm_match(match.id, opponent.id)
 
             hydrated_store = RankKitStore(path)
-            hydrated_league = hydrated_store._require_league(league.id)
+            hydrated_league = hydrated_store.get_league(league.id)
             hydrated_match = hydrated_store._require_match(match.id)
             leaderboard = hydrated_store.leaderboard(league.id)
             owner_history = hydrated_store.player_rating_history(league.id, owner.id)

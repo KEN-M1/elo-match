@@ -1,6 +1,7 @@
 import unittest
 
 from app.db.postgres_store import PostgresStore
+from app.domain import RankKitStore
 
 
 class PostgresStoreTests(unittest.TestCase):
@@ -24,6 +25,7 @@ class PostgresStoreTests(unittest.TestCase):
         }
 
         self.assertTrue(expected_methods.issubset(set(dir(PostgresStore))))
+        self.assertTrue(expected_methods.issubset(set(dir(RankKitStore))))
 
 
 if __name__ == "__main__":

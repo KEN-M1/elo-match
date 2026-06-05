@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  verify:
+    name: Verify app
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install backend dependencies
+        shell: pwsh
+        run: |
+          python -m venv backend/.venv
+          backend\.venv\Scripts\python.exe -m pip install -r backend\requirements-dev.txt
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install chromium
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Build web app
+        run: pnpm run build:web
+
+      - name: Run browser smoke
+        run: pnpm run test:e2e
+
+  postgres-smoke:
+    name: Postgres smoke
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: rankkit
+          POSTGRES_USER: rankkit
+          POSTGRES_PASSWORD: rankkit
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rankkit -d rankkit"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://rankkit:rankkit@localhost:5432/rankkit
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install -r requirements-dev.txt
+
+      - name: Apply migrations
+        working-directory: backend
+        run: .venv/bin/python -m alembic upgrade head
+
+      - name: Run Postgres adapter smoke
+        working-directory: backend
+        run: .venv/bin/python -m app.db.smoke

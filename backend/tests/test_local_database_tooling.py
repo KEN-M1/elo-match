@@ -72,6 +72,21 @@ class LocalDatabaseToolingTests(unittest.TestCase):
         self.assertIn("--port $Port", script)
         self.assertNotIn("--reload", script)
 
+    def test_ci_workflow_verifies_app_build_and_postgres_smoke(self) -> None:
+        workflow = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+
+        for expected in [
+            "windows-latest",
+            "ubuntu-latest",
+            "postgres:16-alpine",
+            "pnpm test",
+            "pnpm run build:web",
+            "pnpm run test:e2e",
+            "python -m alembic upgrade head",
+            "python -m app.db.smoke",
+        ]:
+            self.assertIn(expected, workflow)
+
     def test_verify_db_script_checks_alembic_version_and_tables(self) -> None:
         script = (REPO_ROOT / "scripts" / "verify-db.ps1").read_text(encoding="utf-8")
 

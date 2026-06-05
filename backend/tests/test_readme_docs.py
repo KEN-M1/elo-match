@@ -18,6 +18,8 @@ class ReadmeDocsTests(unittest.TestCase):
             "pnpm run start:backend",
             "pnpm run build:web",
             "pnpm run start:web",
+            "## CI Verification",
+            "Postgres smoke",
             "## Postgres Adapter Smoke",
             "pnpm run db:smoke",
             "DISPUTED",

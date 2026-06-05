@@ -25,6 +25,7 @@
 - **Auth Session**: The backend module that resolves the current User from either a verified bearer token or the local demo user header before route handlers perform application work.
 - **RankKit Client**: The web module that converts backend transport responses into RankKit domain values for screens and workflows.
 - **Postgres Schema**: The future database table shape for RankKit users, leagues, members, invites, matches, and rating history; separate from the local Store Snapshot until a real adapter is implemented.
+- **Postgres Match Persistence**: The Postgres adapter module that owns Match row writes, Match row hydration, rating-result serialization, and Rating History write ordering behind the Store adapter seam.
 
 ## Architectural Vocabulary
 

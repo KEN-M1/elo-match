@@ -21,6 +21,23 @@ class ReadmeDocsTests(unittest.TestCase):
         ]:
             self.assertIn(expected, readme)
 
+    def test_env_example_documents_local_and_production_runtime_settings(self) -> None:
+        env_example = (REPO_ROOT / ".env.example").read_text(encoding="utf-8")
+
+        for expected in [
+            "ENVIRONMENT=local",
+            "STORE_BACKEND=local",
+            "NEXT_PUBLIC_API_URL=http://localhost:8002",
+            "AUTH_REQUIRED=false",
+            "ENVIRONMENT=production",
+            "STORE_BACKEND=postgres",
+            "ALLOWED_ORIGINS=https://your-web-app.example",
+            "JWT_SECRET=replace-with-the-same-32-character-or-longer-secret-used-by-nextauth",
+            "NEXTAUTH_SECRET=replace-with-the-same-32-character-or-longer-secret-used-by-backend",
+            "AUTH_REQUIRED=true",
+        ]:
+            self.assertIn(expected, env_example)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -28,6 +28,21 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             scripts["db:verify"],
         )
 
+    def test_root_scripts_expose_production_runtime_commands(self) -> None:
+        package_json = json.loads((REPO_ROOT / "package.json").read_text(encoding="utf-8"))
+        scripts = package_json["scripts"]
+
+        self.assertEqual(
+            "powershell -ExecutionPolicy Bypass -File scripts/start-backend.ps1",
+            scripts["start:backend"],
+        )
+        self.assertEqual("pnpm --filter @rankkit/web build", scripts["build:web"])
+        self.assertEqual("pnpm --filter @rankkit/web start", scripts["start:web"])
+
+        web_package_json = json.loads((REPO_ROOT / "apps" / "web" / "package.json").read_text(encoding="utf-8"))
+        self.assertEqual("next build", web_package_json["scripts"]["build"])
+        self.assertEqual("next start", web_package_json["scripts"]["start"])
+
     def test_compose_file_defines_rankkit_postgres(self) -> None:
         compose = (REPO_ROOT / "compose.yaml").read_text(encoding="utf-8")
 
@@ -48,6 +63,14 @@ class LocalDatabaseToolingTests(unittest.TestCase):
         for script_name in ["dev-db.ps1", "migrate-db.ps1", "migration-sql.ps1", "verify-db.ps1"]:
             script = (REPO_ROOT / "scripts" / script_name).read_text(encoding="utf-8")
             self.assertIn("if ($LASTEXITCODE -ne 0)", script)
+
+    def test_backend_start_script_runs_uvicorn_without_reload(self) -> None:
+        script = (REPO_ROOT / "scripts" / "start-backend.ps1").read_text(encoding="utf-8")
+
+        self.assertIn("app.main:app", script)
+        self.assertIn("--host 0.0.0.0", script)
+        self.assertIn("--port $Port", script)
+        self.assertNotIn("--reload", script)
 
     def test_verify_db_script_checks_alembic_version_and_tables(self) -> None:
         script = (REPO_ROOT / "scripts" / "verify-db.ps1").read_text(encoding="utf-8")

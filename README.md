@@ -110,6 +110,24 @@ In production, RankKit refuses to start with the local JSON Store Snapshot or th
 JWT secret. `JWT_SECRET` must match `NEXTAUTH_SECRET` from the web app because NextAuth issues the
 bearer token that the FastAPI backend verifies.
 
+## Production Runtime Commands
+
+Start the backend without dev reload after the backend virtual environment has dependencies
+installed:
+
+```powershell
+pnpm run start:backend
+```
+
+The backend binds to `0.0.0.0` and uses `PORT` when set, defaulting to `8002`.
+
+Build and start the web app with Next.js production commands:
+
+```powershell
+pnpm run build:web
+pnpm run start:web
+```
+
 Start a local Postgres container:
 
 ```powershell

@@ -128,6 +128,20 @@ pnpm run build:web
 pnpm run start:web
 ```
 
+## Backend Container Image
+
+The FastAPI backend has a production Dockerfile that installs runtime dependencies only, copies the
+API and Alembic migration files, exposes port `8002`, and starts uvicorn without reload.
+
+Build the backend image from the repository root:
+
+```powershell
+docker build -t rankkit-api ./backend
+```
+
+Run the container with production environment variables and a reachable Postgres `DATABASE_URL`.
+Run Alembic migrations before rolling out a new API image.
+
 ## CI Verification
 
 GitHub Actions runs `.github/workflows/ci.yml` on pull requests and pushes to `main`.

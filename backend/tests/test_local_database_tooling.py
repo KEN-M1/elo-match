@@ -72,6 +72,28 @@ class LocalDatabaseToolingTests(unittest.TestCase):
         self.assertIn("--port $Port", script)
         self.assertNotIn("--reload", script)
 
+    def test_backend_dockerfile_defines_production_api_image(self) -> None:
+        dockerfile = (REPO_ROOT / "backend" / "Dockerfile").read_text(encoding="utf-8")
+        dockerignore = (REPO_ROOT / "backend" / ".dockerignore").read_text(encoding="utf-8")
+
+        for expected in [
+            "FROM python:3.12-slim",
+            "pip install --no-cache-dir -r requirements.txt",
+            "COPY app ./app",
+            "COPY alembic ./alembic",
+            "COPY alembic.ini ./alembic.ini",
+            "EXPOSE 8002",
+            "HEALTHCHECK",
+            'CMD ["python", "-m", "uvicorn", "app.main:app"',
+            '"--host", "0.0.0.0"',
+            '"--port", "8002"',
+        ]:
+            self.assertIn(expected, dockerfile)
+        self.assertNotIn("--reload", dockerfile)
+
+        for expected in [".venv", "__pycache__", "data", ".env", "tests"]:
+            self.assertIn(expected, dockerignore)
+
     def test_ci_workflow_verifies_app_build_and_postgres_smoke(self) -> None:
         workflow = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
 

@@ -23,6 +23,7 @@
 - **Local Demo Flow**: The web module that runs the one-click MVP path by syncing demo users, creating a league, accepting an invite, logging and confirming a match, and loading standings/history.
 - **Authenticated Actor**: The current browser user, resolved from Google OAuth or the local demo fallback, who performs league and match actions.
 - **Auth Session**: The backend module that resolves the current User from either a verified bearer token or the local demo user header before route handlers perform application work.
+- **Route Policy**: The backend module that owns route response shape and HTTP error mapping while route handlers keep URL-to-Store intent readable.
 - **RankKit Client**: The web module that converts backend transport responses into RankKit domain values for screens and workflows.
 - **Postgres Schema**: The future database table shape for RankKit users, leagues, members, invites, matches, and rating history; separate from the local Store Snapshot until a real adapter is implemented.
 - **Postgres Match Persistence**: The Postgres adapter module that owns Match row writes, Match row hydration, rating-result serialization, and Rating History write ordering behind the Store adapter seam.

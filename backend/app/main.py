@@ -2,11 +2,12 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from app.auth import verify_bearer_token
+from app.auth_session import AuthSession, MissingLocalUserHeader
 from app.config import settings
 from app.domain import RankKitError, RankKitStore
 
 store = RankKitStore(settings.local_data_path)
+auth_session = AuthSession()
 
 
 class SyncUserRequest(BaseModel):
@@ -71,21 +72,7 @@ def create_app() -> FastAPI:
         authorization: str | None = Header(default=None),
         x_rankkit_user: str | None = Header(default=None),
     ) -> dict:
-        principal = _response(lambda: verify_bearer_token(authorization))["data"]
-        if principal is not None:
-            return {
-                "data": store.sync_user(
-                    email=principal.email,
-                    name=principal.name,
-                    image=principal.image,
-                )
-            }
-        if not x_rankkit_user:
-            raise HTTPException(status_code=401, detail="Missing user header for local MVP.")
-        user = store.users.get(x_rankkit_user)
-        if user is None:
-            raise HTTPException(status_code=404, detail="User was not found.")
-        return {"data": user}
+        return _auth_response(lambda: auth_session.current_user(store, authorization, x_rankkit_user))
 
     @app.post("/v1/leagues")
     def create_league(body: CreateLeagueRequest) -> dict:
@@ -165,6 +152,17 @@ def _response(callback):
     try:
         return {"data": callback()}
     except RankKitError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+def _auth_response(callback):
+    try:
+        return {"data": callback()}
+    except MissingLocalUserHeader as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+    except RankKitError as exc:
+        if str(exc) == "User was not found.":
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 

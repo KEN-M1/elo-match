@@ -64,6 +64,14 @@ class PostgresStore:
         )
         return user
 
+    async def get_user(self, user_id: str) -> User:
+        row = (
+            await self.connection.execute(select(users).where(users.c.id == user_id))
+        ).mappings().first()
+        if row is None:
+            raise RankKitError("User was not found.")
+        return _user_from_row(row)
+
     async def create_league(
         self,
         owner_id: str,

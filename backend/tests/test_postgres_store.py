@@ -13,6 +13,7 @@ class PostgresStoreTests(unittest.TestCase):
             "create_league",
             "dispute_match",
             "get_league",
+            "get_user",
             "league_matches",
             "leaderboard",
             "list_leagues",

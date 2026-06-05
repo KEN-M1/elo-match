@@ -133,6 +133,9 @@ class RankKitStore:
         self._save()
         return user
 
+    def get_user(self, user_id: str) -> User:
+        return self._require_user(user_id)
+
     def create_league(
         self,
         owner_id: str,

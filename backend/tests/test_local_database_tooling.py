@@ -78,6 +78,7 @@ class LocalDatabaseToolingTests(unittest.TestCase):
         for expected in [
             "windows-latest",
             "ubuntu-latest",
+            "FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true",
             "postgres:16-alpine",
             "pnpm test",
             "pnpm run build:web",

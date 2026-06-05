@@ -6,9 +6,9 @@ Create the authenticated web shell and backend auth seam so a Google-authenticat
 
 ## Acceptance criteria
 
-- [ ] The web app has a dashboard entry point.
-- [ ] Backend exposes current-user and auth-sync routes.
-- [ ] Tests can use a fake authenticated user without depending on Google.
+- [x] The web app has a dashboard entry point.
+- [x] Backend exposes current-user and auth-sync routes.
+- [x] Tests can use a fake authenticated user without depending on Google.
 
 ## Blocked by
 

@@ -6,9 +6,9 @@ Allow a league admin to create invite links and allow signed-in users to accept 
 
 ## Acceptance criteria
 
-- [ ] Admins can create copyable invite tokens.
-- [ ] Invite tokens can be fetched and accepted.
-- [ ] Accepting an invite creates a league member at the starting rating.
+- [x] Admins can create copyable invite tokens.
+- [x] Invite tokens can be fetched and accepted.
+- [x] Accepting an invite creates a league member at the starting rating.
 
 ## Blocked by
 

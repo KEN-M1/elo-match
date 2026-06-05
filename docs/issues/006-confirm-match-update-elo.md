@@ -6,10 +6,10 @@ Allow the opponent to confirm a pending match and update both players' Elo ratin
 
 ## Acceptance criteria
 
-- [ ] Only the opponent or an admin can confirm a pending match.
-- [ ] Confirming applies Elo with initial `1000`, K `32`, and floor `100`.
-- [ ] Rating history is appended for both participants.
-- [ ] The leaderboard reflects the new ratings.
+- [x] Only the opponent or an admin can confirm a pending match.
+- [x] Confirming applies Elo with initial `1000`, K `32`, and floor `100`.
+- [x] Rating history is appended for both participants.
+- [x] The leaderboard reflects the new ratings.
 
 ## Blocked by
 

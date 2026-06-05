@@ -6,10 +6,10 @@ Create the local RankKit workspace with backend, web, shared types, infra skelet
 
 ## Acceptance criteria
 
-- [ ] The repository has backend, web, shared types, and infra directories.
-- [ ] Local environment variables are documented.
-- [ ] Domain context and ADRs exist for future architecture review.
-- [ ] Basic test commands are documented.
+- [x] The repository has backend, web, shared types, and infra directories.
+- [x] Local environment variables are documented.
+- [x] Domain context and ADRs exist for future architecture review.
+- [x] Basic test commands are documented.
 
 ## Blocked by
 

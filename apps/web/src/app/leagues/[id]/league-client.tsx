@@ -39,19 +39,17 @@ export function LeagueClient({ leagueId }: { leagueId: string }) {
               </tr>
             </thead>
             <tbody>
-              {workspace.members.map((member) => (
-                <tr key={member.user_id}>
+              {workspace.memberRows.map((member) => (
+                <tr key={member.userId}>
                   <td>
-                    <Link className="inline-link" href={`/leagues/${leagueId}/players/${member.user_id}`}>
-                      {workspace.labelFor(member.user_id)}
+                    <Link className="inline-link" href={member.playerHref}>
+                      {member.label}
                     </Link>
                   </td>
                   <td>{member.rating}</td>
+                  <td>{member.record}</td>
                   <td>
-                    {member.wins}-{member.losses}
-                  </td>
-                  <td>
-                    <button className="link-button" onClick={() => void workspace.claimAsLocalUser(member)}>
+                    <button className="link-button" onClick={() => void member.useAsActor()}>
                       Use
                     </button>
                   </td>
@@ -66,18 +64,18 @@ export function LeagueClient({ leagueId }: { leagueId: string }) {
           <label className="field">
             Member email
             <input
-              value={workspace.newMemberEmail}
-              onChange={(event) => workspace.setNewMemberEmail(event.target.value)}
+              value={workspace.newMember.email}
+              onChange={(event) => workspace.newMember.changeEmail(event.target.value)}
             />
           </label>
-          <button className="button" onClick={workspace.inviteAndAcceptMember} type="button">
+          <button className="button" onClick={workspace.newMember.submit} type="button">
             Create invite and accept
           </button>
-          {workspace.inviteToken ? (
+          {workspace.newMember.inviteToken ? (
             <p className="muted">
               Last invite:{" "}
-              <Link className="inline-link" href={`/invites/${workspace.inviteToken}`}>
-                /invites/{workspace.inviteToken}
+              <Link className="inline-link" href={`/invites/${workspace.newMember.inviteToken}`}>
+                /invites/{workspace.newMember.inviteToken}
               </Link>
             </p>
           ) : null}
@@ -89,25 +87,36 @@ export function LeagueClient({ leagueId }: { leagueId: string }) {
           <h2>Log match</h2>
           <label className="field">
             Winner
-            <select value={workspace.winnerId} onChange={(event) => workspace.setWinnerId(event.target.value)}>
-              {workspace.members.map((member) => (
-                <option key={member.user_id} value={member.user_id}>
-                  {workspace.labelFor(member.user_id)}
+            <select
+              value={workspace.matchForm.winnerId}
+              onChange={(event) => workspace.matchForm.chooseWinner(event.target.value)}
+            >
+              {workspace.matchForm.winnerOptions.map((member) => (
+                <option key={member.userId} value={member.userId}>
+                  {member.label}
                 </option>
               ))}
             </select>
           </label>
           <label className="field">
             Loser
-            <select value={workspace.loserId} onChange={(event) => workspace.setLoserId(event.target.value)}>
-              {workspace.members.map((member) => (
-                <option key={member.user_id} value={member.user_id}>
-                  {workspace.labelFor(member.user_id)}
+            <select
+              value={workspace.matchForm.loserId}
+              onChange={(event) => workspace.matchForm.chooseLoser(event.target.value)}
+            >
+              {workspace.matchForm.loserOptions.map((member) => (
+                <option key={member.userId} value={member.userId}>
+                  {member.label}
                 </option>
               ))}
             </select>
           </label>
-          <button className="button" disabled={workspace.members.length < 2} onClick={workspace.logMatch} type="button">
+          <button
+            className="button"
+            disabled={!workspace.matchForm.canSubmit}
+            onClick={workspace.matchForm.submit}
+            type="button"
+          >
             Log pending match
           </button>
         </article>
@@ -115,38 +124,36 @@ export function LeagueClient({ leagueId }: { leagueId: string }) {
         <article className="panel">
           <h2>Pending matches</h2>
           <div className="stack">
-            {workspace.pendingMatches.length === 0 ? (
+            {workspace.pendingMatchCards.length === 0 ? (
               <p className="muted">No pending or disputed matches.</p>
             ) : (
-              workspace.pendingMatches.map((match) => (
+              workspace.pendingMatchCards.map((match) => (
                 <div className="mini-card" key={match.id}>
                   <strong>{match.status}</strong>
-                  <p className="muted">
-                    Winner {workspace.labelFor(match.winner_id)} over {workspace.labelFor(match.loser_id)}
-                  </p>
+                  <p className="muted">{match.summary}</p>
                   <div className="actions">
-                    {match.status === "PENDING" ? (
+                    {match.confirmAsOpponent ? (
                       <>
-                        <button className="button" onClick={() => void workspace.confirmMatch(match)} type="button">
+                        <button className="button" onClick={() => void match.confirmAsOpponent?.()} type="button">
                           Confirm as opponent
                         </button>
                         <button
                           className="button secondary"
-                          onClick={() => void workspace.disputeMatch(match)}
+                          onClick={() => void match.dispute?.()}
                           type="button"
                         >
                           Dispute
                         </button>
                       </>
                     ) : null}
-                    {match.status === "DISPUTED" && workspace.canResolveDisputes ? (
+                    {match.confirmAsAdmin ? (
                       <>
-                        <button className="button" onClick={() => void workspace.confirmMatchAsAdmin(match)} type="button">
+                        <button className="button" onClick={() => void match.confirmAsAdmin?.()} type="button">
                           Confirm as admin
                         </button>
                         <button
                           className="button secondary"
-                          onClick={() => void workspace.rejectMatch(match)}
+                          onClick={() => void match.reject?.()}
                           type="button"
                         >
                           Reject dispute
@@ -165,15 +172,13 @@ export function LeagueClient({ leagueId }: { leagueId: string }) {
         <article className="panel">
           <h2>Recent matches</h2>
           <div className="stack">
-            {workspace.matches.length === 0 ? (
+            {workspace.recentMatchCards.length === 0 ? (
               <p className="muted">No matches logged yet.</p>
             ) : (
-              workspace.matches.map((match) => (
+              workspace.recentMatchCards.map((match) => (
                 <div className="mini-card" key={match.id}>
                   <strong>{match.status}</strong>
-                  <p className="muted">
-                    {workspace.labelFor(match.winner_id)} defeated {workspace.labelFor(match.loser_id)}
-                  </p>
+                  <p className="muted">{match.summary}</p>
                 </div>
               ))
             )}
@@ -190,10 +195,10 @@ export function LeagueClient({ leagueId }: { leagueId: string }) {
               </tr>
             </thead>
             <tbody>
-              {workspace.history.map((entry, index) => (
-                <tr key={`${entry.user_id}-${entry.match_id ?? "initial"}-${index}`}>
+              {workspace.ratingHistoryRows.map((entry) => (
+                <tr key={entry.key}>
                   <td>{entry.rating}</td>
-                  <td>{entry.match_id ?? "Initial"}</td>
+                  <td>{entry.matchLabel}</td>
                 </tr>
               ))}
             </tbody>

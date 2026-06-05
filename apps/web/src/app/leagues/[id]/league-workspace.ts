@@ -144,6 +144,82 @@ export function useLeagueWorkspace(leagueId: string) {
     await mutateMatch(() => api.matches.reject(leagueId, match.id, localUser.id), "Dispute rejected.");
   }
 
+  const memberRows = useMemo(
+    () =>
+      members.map((member) => ({
+        userId: member.user_id,
+        label: labelFor(member.user_id),
+        playerHref: `/leagues/${leagueId}/players/${member.user_id}`,
+        rating: member.rating,
+        record: `${member.wins}-${member.losses}`,
+        useAsActor: () => claimAsLocalUser(member),
+      })),
+    [leagueId, localUser, members],
+  );
+
+  const matchOptions = useMemo(
+    () =>
+      members.map((member) => ({
+        userId: member.user_id,
+        label: labelFor(member.user_id),
+      })),
+    [localUser, members],
+  );
+
+  const matchForm = {
+    canSubmit: members.length >= 2,
+    chooseLoser: setLoserId,
+    chooseWinner: setWinnerId,
+    loserId,
+    loserOptions: matchOptions,
+    submit: logMatch,
+    winnerId,
+    winnerOptions: matchOptions,
+  };
+
+  const newMember = {
+    changeEmail: setNewMemberEmail,
+    email: newMemberEmail,
+    inviteToken,
+    submit: inviteAndAcceptMember,
+  };
+
+  const pendingMatchCards = useMemo(
+    () =>
+      pendingMatches.map((match) => ({
+        id: match.id,
+        status: match.status,
+        summary: `Winner ${labelFor(match.winner_id)} over ${labelFor(match.loser_id)}`,
+        confirmAsAdmin:
+          match.status === "DISPUTED" && canResolveDisputes
+            ? () => confirmMatchAsAdmin(match)
+            : null,
+        confirmAsOpponent: match.status === "PENDING" ? () => confirmMatch(match) : null,
+        dispute: match.status === "PENDING" ? () => disputeMatch(match) : null,
+        reject:
+          match.status === "DISPUTED" && canResolveDisputes
+            ? () => rejectMatch(match)
+            : null,
+      })),
+    [canResolveDisputes, leagueId, localUser, members, pendingMatches],
+  );
+
+  const recentMatchCards = useMemo(
+    () =>
+      matches.map((match) => ({
+        id: match.id,
+        status: match.status,
+        summary: `${labelFor(match.winner_id)} defeated ${labelFor(match.loser_id)}`,
+      })),
+    [localUser, matches, members],
+  );
+
+  const ratingHistoryRows = history.map((entry, index) => ({
+    key: `${entry.user_id}-${entry.match_id ?? "initial"}-${index}`,
+    matchLabel: entry.match_id ?? "Initial",
+    rating: entry.rating,
+  }));
+
   function labelFor(userId: string) {
     const member = members.find((candidate) => candidate.user_id === userId);
     const label = member?.name || member?.email || userId;
@@ -162,28 +238,14 @@ export function useLeagueWorkspace(leagueId: string) {
   }
 
   return {
-    canResolveDisputes,
-    claimAsLocalUser,
-    confirmMatch,
-    confirmMatchAsAdmin,
-    disputeMatch,
     error,
-    history,
-    inviteAndAcceptMember,
-    inviteToken,
-    labelFor,
     league,
-    logMatch,
-    loserId,
-    matches,
-    members,
-    newMemberEmail,
-    pendingMatches,
-    rejectMatch,
-    setLoserId,
-    setNewMemberEmail,
-    setWinnerId,
+    matchForm,
+    memberRows,
+    newMember,
+    pendingMatchCards,
+    ratingHistoryRows,
+    recentMatchCards,
     status,
-    winnerId,
   };
 }

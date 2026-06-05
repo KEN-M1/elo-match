@@ -18,14 +18,28 @@ from app.domain import (
     RatingHistoryEntry,
     User,
 )
-from app.rating import EloResult, calculate_elo
+from app.leaderboard import LeaderboardProjection
+from app.match_lifecycle import MatchLifecycleRules, MatchRatingApplication
+from app.membership import MembershipApplication
+from app.rating import EloResult
 
 
 class PostgresStore:
     """First Postgres adapter slice for RankKit user and League persistence."""
 
-    def __init__(self, connection) -> None:
+    def __init__(
+        self,
+        connection,
+        match_rules: MatchLifecycleRules | None = None,
+        rating_application: MatchRatingApplication | None = None,
+        membership_application: MembershipApplication | None = None,
+        leaderboard_projection: LeaderboardProjection | None = None,
+    ) -> None:
         self.connection = connection
+        self.match_rules = match_rules or MatchLifecycleRules()
+        self.rating_application = rating_application or MatchRatingApplication()
+        self.membership_application = membership_application or MembershipApplication()
+        self.leaderboard_projection = leaderboard_projection or LeaderboardProjection()
 
     async def sync_user(self, email: str, name: str | None = None, image: str | None = None) -> User:
         existing = (
@@ -78,7 +92,6 @@ class PostgresStore:
             description=description,
             is_public=is_public,
         )
-        now = datetime.now(timezone.utc)
         await self.connection.execute(
             insert(leagues).values(
                 id=league.id,
@@ -92,24 +105,25 @@ class PostgresStore:
                 rating_floor=league.rating_floor,
             )
         )
+        member, history = self.membership_application.create_owner_membership(league)
         await self.connection.execute(
             insert(league_members).values(
-                league_id=league.id,
-                user_id=owner_id,
-                role="admin",
-                rating=league.initial_rating,
-                wins=0,
-                losses=0,
-                joined_at=now,
+                league_id=member.league_id,
+                user_id=member.user_id,
+                role=member.role,
+                rating=member.rating,
+                wins=member.wins,
+                losses=member.losses,
+                joined_at=member.joined_at,
             )
         )
         await self.connection.execute(
             insert(rating_history).values(
-                user_id=owner_id,
-                league_id=league.id,
-                match_id=None,
-                rating=league.initial_rating,
-                recorded_at=now,
+                user_id=history.user_id,
+                league_id=history.league_id,
+                match_id=history.match_id,
+                rating=history.rating,
+                recorded_at=history.recorded_at,
             )
         )
         return league
@@ -143,13 +157,8 @@ class PostgresStore:
             raise RankKitError("Invite token has already been accepted.")
 
         league = await self.get_league(invite_row["league_id"])
-        now = datetime.now(timezone.utc)
-        member = LeagueMember(
-            league_id=league.id,
-            user_id=user_id,
-            rating=league.initial_rating,
-            joined_at=now,
-        )
+        invite = _invite_from_row(invite_row)
+        member, history = self.membership_application.accept_invite(invite, league, user_id)
         await self.connection.execute(
             insert(league_members).values(
                 league_id=member.league_id,
@@ -164,15 +173,15 @@ class PostgresStore:
         await self.connection.execute(
             update(invites)
             .where(invites.c.token == token)
-            .values(accepted_by_id=user_id, accepted_at=now)
+            .values(accepted_by_id=invite.accepted_by_id, accepted_at=invite.accepted_at)
         )
         await self.connection.execute(
             insert(rating_history).values(
-                user_id=user_id,
-                league_id=league.id,
-                match_id=None,
-                rating=league.initial_rating,
-                recorded_at=now,
+                user_id=history.user_id,
+                league_id=history.league_id,
+                match_id=history.match_id,
+                rating=history.rating,
+                recorded_at=history.recorded_at,
             )
         )
         return member
@@ -204,13 +213,9 @@ class PostgresStore:
         played_at: datetime | None = None,
     ) -> Match:
         await self.get_league(league_id)
-        if winner_id == loser_id:
-            raise RankKitError("A match requires two different players.")
-        if reported_by_id not in {winner_id, loser_id}:
-            raise RankKitError("Reporter must be one of the match participants.")
-
         await self._require_member(league_id, winner_id)
         await self._require_member(league_id, loser_id)
+        self.match_rules.ensure_loggable(reported_by_id, winner_id, loser_id)
         now = datetime.now(timezone.utc)
         match = Match(
             id=str(uuid4()),
@@ -248,33 +253,31 @@ class PostgresStore:
 
     async def confirm_match(self, match_id: str, actor_id: str) -> Match:
         match = await self._require_match(match_id)
-        if match.status not in {MatchStatus.PENDING, MatchStatus.DISPUTED}:
-            raise RankKitError("Only pending or disputed matches can be confirmed.")
-        if actor_id == match.reported_by_id and not await self._is_admin(match.league_id, actor_id):
-            raise RankKitError("Reporter cannot confirm their own match.")
-        if actor_id not in {match.winner_id, match.loser_id} and not await self._is_admin(
-            match.league_id,
+        self.match_rules.ensure_confirmable(
+            match,
             actor_id,
-        ):
-            raise RankKitError("Only a participant or admin can confirm this match.")
+            actor_is_admin=await self._is_admin(match.league_id, actor_id),
+        )
 
         league = await self.get_league(match.league_id)
         winner = await self._require_member(match.league_id, match.winner_id)
         loser = await self._require_member(match.league_id, match.loser_id)
-        result = calculate_elo(
-            winner.rating,
-            loser.rating,
-            k_factor=league.default_k,
-            rating_floor=league.rating_floor,
+        history_entries = self.rating_application.apply_confirmed_match(
+            league=league,
+            match=match,
+            winner=winner,
+            loser=loser,
+            confirmed_by_id=actor_id,
         )
-        now = datetime.now(timezone.utc)
+        if match.rating_result is None:
+            raise RuntimeError("Confirmed match must include a rating result.")
         await self.connection.execute(
             update(league_members)
             .where(
                 league_members.c.league_id == match.league_id,
                 league_members.c.user_id == match.winner_id,
             )
-            .values(rating=result.winner_rating_after, wins=winner.wins + 1)
+            .values(rating=winner.rating, wins=winner.wins)
         )
         await self.connection.execute(
             update(league_members)
@@ -282,49 +285,35 @@ class PostgresStore:
                 league_members.c.league_id == match.league_id,
                 league_members.c.user_id == match.loser_id,
             )
-            .values(rating=result.loser_rating_after, losses=loser.losses + 1)
+            .values(rating=loser.rating, losses=loser.losses)
         )
         await self.connection.execute(
             update(matches)
             .where(matches.c.id == match.id)
             .values(
-                status=MatchStatus.COMPLETED.value,
-                confirmed_by_id=actor_id,
-                rating_result=_elo_result_to_dict(result),
+                status=match.status.value,
+                confirmed_by_id=match.confirmed_by_id,
+                rating_result=_elo_result_to_dict(match.rating_result),
             )
         )
         await self.connection.execute(
             insert(rating_history),
             [
                 {
-                    "user_id": match.winner_id,
-                    "league_id": match.league_id,
-                    "match_id": match.id,
-                    "rating": result.winner_rating_after,
-                    "recorded_at": now,
-                },
-                {
-                    "user_id": match.loser_id,
-                    "league_id": match.league_id,
-                    "match_id": match.id,
-                    "rating": result.loser_rating_after,
-                    "recorded_at": now,
-                },
+                    "user_id": entry.user_id,
+                    "league_id": entry.league_id,
+                    "match_id": entry.match_id,
+                    "rating": entry.rating,
+                    "recorded_at": entry.recorded_at,
+                }
+                for entry in history_entries
             ],
         )
-        match.status = MatchStatus.COMPLETED
-        match.confirmed_by_id = actor_id
-        match.rating_result = result
         return match
 
     async def dispute_match(self, match_id: str, actor_id: str, note: str | None = None) -> Match:
         match = await self._require_match(match_id)
-        if match.status != MatchStatus.PENDING:
-            raise RankKitError("Only pending matches can be disputed.")
-        if actor_id == match.reported_by_id:
-            raise RankKitError("Reporter cannot dispute their own match.")
-        if actor_id not in {match.winner_id, match.loser_id}:
-            raise RankKitError("Only a participant can dispute this match.")
+        self.match_rules.ensure_disputable(match, actor_id)
 
         await self.connection.execute(
             update(matches)
@@ -343,8 +332,7 @@ class PostgresStore:
     async def reject_match(self, match_id: str, admin_id: str) -> Match:
         match = await self._require_match(match_id)
         await self._require_admin(match.league_id, admin_id)
-        if match.status != MatchStatus.DISPUTED:
-            raise RankKitError("Only disputed matches can be rejected.")
+        self.match_rules.ensure_rejectable(match)
 
         await self.connection.execute(
             update(matches)
@@ -360,32 +348,25 @@ class PostgresStore:
             await self.connection.execute(
                 select(league_members)
                 .where(league_members.c.league_id == league_id)
-                .order_by(league_members.c.rating.desc(), league_members.c.joined_at.asc())
             )
         ).mappings().all()
-        return [_league_member_from_row(row) for row in rows]
+        return self.leaderboard_projection.rank_members([_league_member_from_row(row) for row in rows])
 
     async def member_summaries(self, league_id: str) -> list[MemberSummary]:
         await self.get_league(league_id)
-        rows = (
+        members = await self.leaderboard(league_id)
+        user_ids = [member.user_id for member in members]
+        if not user_ids:
+            return []
+
+        user_rows = (
             await self.connection.execute(
-                select(
-                    league_members.c.league_id,
-                    league_members.c.user_id,
-                    users.c.email,
-                    users.c.name,
-                    league_members.c.role,
-                    league_members.c.rating,
-                    league_members.c.wins,
-                    league_members.c.losses,
-                    league_members.c.joined_at,
-                )
-                .join(users, users.c.id == league_members.c.user_id)
-                .where(league_members.c.league_id == league_id)
-                .order_by(league_members.c.rating.desc(), league_members.c.joined_at.asc())
+                select(users).where(users.c.id.in_(user_ids))
             )
         ).mappings().all()
-        return [_member_summary_from_row(row) for row in rows]
+        hydrated_users = [_user_from_row(row) for row in user_rows]
+        users_by_id = {user.id: user for user in hydrated_users}
+        return self.leaderboard_projection.member_summaries(members, users_by_id)
 
     async def public_leaderboard(self, slug: str) -> tuple[League, list[MemberSummary]]:
         row = (
@@ -489,17 +470,13 @@ def _league_member_from_row(row) -> LeagueMember:
     )
 
 
-def _member_summary_from_row(row) -> MemberSummary:
-    return MemberSummary(
+def _invite_from_row(row) -> Invite:
+    return Invite(
+        token=row["token"],
         league_id=row["league_id"],
-        user_id=row["user_id"],
-        email=row["email"],
-        name=row["name"],
-        role=row["role"],
-        rating=row["rating"],
-        wins=row["wins"],
-        losses=row["losses"],
-        joined_at=row["joined_at"],
+        created_by_id=row["created_by_id"],
+        accepted_by_id=row["accepted_by_id"],
+        accepted_at=row["accepted_at"],
     )
 
 

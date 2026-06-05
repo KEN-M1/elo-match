@@ -112,8 +112,12 @@ class RankKitStore:
         self.rating_history: list[RatingHistoryEntry] = []
         self._local_snapshot = self._create_local_snapshot(persistence_path)
         self._load()
+        from app.leaderboard import LeaderboardProjection
+        from app.membership import MembershipApplication
         from app.match_lifecycle import MatchLifecycle
 
+        self.leaderboard_projection = LeaderboardProjection()
+        self.membership_application = MembershipApplication()
         self.match_lifecycle = MatchLifecycle(self)
 
     def sync_user(self, email: str, name: str | None = None, image: str | None = None) -> User:
@@ -150,20 +154,9 @@ class RankKitStore:
             is_public=is_public,
         )
         self.leagues[league.id] = league
-        self.members[(league.id, owner_id)] = LeagueMember(
-            league_id=league.id,
-            user_id=owner_id,
-            role="admin",
-            rating=league.initial_rating,
-        )
-        self.rating_history.append(
-            RatingHistoryEntry(
-                user_id=owner_id,
-                league_id=league.id,
-                match_id=None,
-                rating=league.initial_rating,
-            )
-        )
+        member, history = self.membership_application.create_owner_membership(league)
+        self.members[(league.id, owner_id)] = member
+        self.rating_history.append(history)
         self._save()
         return league
 
@@ -183,46 +176,21 @@ class RankKitStore:
             raise RankKitError("Invite token has already been accepted.")
 
         league = self._require_league(invite.league_id)
-        member = LeagueMember(
-            league_id=league.id,
-            user_id=user_id,
-            rating=league.initial_rating,
-        )
+        member, history = self.membership_application.accept_invite(invite, league, user_id)
         self.members[(league.id, user_id)] = member
-        invite.accepted_by_id = user_id
-        invite.accepted_at = datetime.now(timezone.utc)
-        self.rating_history.append(
-            RatingHistoryEntry(
-                user_id=user_id,
-                league_id=league.id,
-                match_id=None,
-                rating=league.initial_rating,
-            )
-        )
+        self.rating_history.append(history)
         self._save()
         return member
 
     def leaderboard(self, league_id: str) -> list[LeagueMember]:
         self._require_league(league_id)
         members = [member for member in self.members.values() if member.league_id == league_id]
-        return sorted(members, key=lambda member: (-member.rating, member.joined_at))
+        return self.leaderboard_projection.rank_members(members)
 
     def member_summaries(self, league_id: str) -> list[MemberSummary]:
-        return [
-            MemberSummary(
-                league_id=member.league_id,
-                user_id=member.user_id,
-                email=self.users[member.user_id].email,
-                name=self.users[member.user_id].name,
-                role=member.role,
-                rating=member.rating,
-                wins=member.wins,
-                losses=member.losses,
-                joined_at=member.joined_at,
-            )
-            for member in self.leaderboard(league_id)
-            if member.user_id in self.users
-        ]
+        self._require_league(league_id)
+        members = [member for member in self.members.values() if member.league_id == league_id]
+        return self.leaderboard_projection.member_summaries(members, self.users)
 
     def list_leagues(self, user_id: str | None = None) -> list[League]:
         if user_id is None:

@@ -5,13 +5,17 @@
 - **League**: A competitive group with members, matches, rating settings, and a leaderboard.
 - **League Owner**: The user who creates a league and receives admin permissions.
 - **League Member**: A user who has joined a league and can appear on the leaderboard.
+- **Membership Application**: The League Membership step that creates owner/member records, accepts invites, and creates initial Rating History entries.
 - **Invite**: A tokenized join link for adding a user to a league.
 - **Match**: A reported competitive result between two league members.
+- **Match Lifecycle**: The state rules for logging, confirming, disputing, rejecting, and applying rating effects to a match.
 - **Match Participant**: A user involved in a match, including their rating before and after confirmation.
 - **Pending Match**: A reported match waiting for opponent confirmation.
 - **Disputed Match**: A reported match challenged by the opponent.
 - **Confirmed Match**: A match that has been accepted and applied to ratings.
 - **Leaderboard**: The ordered list of league members by rating.
+- **Leaderboard Projection**: The read-model step that ranks League Members and builds Member Summary rows for league and public views.
+- **Rating Application**: The Match Lifecycle step that calculates Elo changes, updates participant records, and creates Rating History entries.
 - **Rating History**: The append-only record of rating values after confirmed matches.
 - **Public League Page**: A read-only leaderboard reachable by slug without auth when public.
 - **Store Snapshot**: The persisted local JSON representation of RankKit users, leagues, members, invites, matches, and rating history.

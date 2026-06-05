@@ -55,6 +55,27 @@ class RuntimeTests(unittest.TestCase):
                 )
             )
 
+    def test_create_runtime_rejects_local_store_backend_in_production(self) -> None:
+        with self.assertRaisesRegex(ValueError, "STORE_BACKEND must be 'postgres' in production"):
+            create_runtime(
+                Settings(
+                    database_url="postgresql+asyncpg://rankkit:rankkit@localhost:5432/rankkit",
+                    environment="production",
+                    jwt_secret="a-production-secret-with-enough-entropy",
+                    store_backend="local",
+                )
+            )
+
+    def test_create_runtime_rejects_dev_jwt_secret_in_production(self) -> None:
+        with self.assertRaisesRegex(ValueError, "JWT_SECRET must be set"):
+            create_runtime(
+                Settings(
+                    database_url="postgresql+asyncpg://rankkit:rankkit@localhost:5432/rankkit",
+                    environment="production",
+                    store_backend="postgres",
+                )
+            )
+
     def test_create_app_uses_injected_runtime_store(self) -> None:
         class ProbeStore:
             def __init__(self) -> None:

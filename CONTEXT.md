@@ -26,6 +26,7 @@
 - **Route Policy**: The backend module that owns route response shape and HTTP error mapping while route handlers keep URL-to-Store intent readable.
 - **Runtime Composition**: The backend startup module that assembles the Store adapter, Auth Session, and Route Policy so deployment-specific wiring can change without rewriting route handlers.
 - **Runtime Store Backend**: The configured Store adapter mode. `local` uses the Store Snapshot for local demos; `postgres` uses Postgres runtime connections through the Postgres adapter.
+- **Production Config Guardrail**: The Runtime Composition validation step that keeps local defaults usable for demos while refusing insecure production settings such as the local Store adapter or the development JWT secret.
 - **RankKit Client**: The web module that converts backend transport responses into RankKit domain values for screens and workflows.
 - **Postgres Schema**: The future database table shape for RankKit users, leagues, members, invites, matches, and rating history; separate from the local Store Snapshot until a real adapter is implemented.
 - **Postgres Match Persistence**: The Postgres adapter module that owns Match row writes, Match row hydration, rating-result serialization, and Rating History write ordering behind the Store adapter seam.

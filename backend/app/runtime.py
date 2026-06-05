@@ -19,6 +19,7 @@ class RankKitRuntime:
 
 
 def create_runtime(app_settings: Settings = settings) -> RankKitRuntime:
+    app_settings.validate_for_runtime()
     store = create_store(app_settings)
     return RankKitRuntime(
         store=store,

@@ -91,6 +91,25 @@ STORE_BACKEND=postgres
 DATABASE_URL=postgresql+asyncpg://rankkit:rankkit@localhost:5432/rankkit
 ```
 
+## Production Backend Configuration
+
+Local development keeps permissive defaults so the demo remains easy to run. Production runtime
+composition validates the deployment configuration before the API starts.
+
+Set these backend environment variables for a production deploy:
+
+```powershell
+ENVIRONMENT=production
+STORE_BACKEND=postgres
+DATABASE_URL=postgresql+asyncpg://user:password@host:5432/rankkit
+JWT_SECRET=replace-with-the-same-32-character-or-longer-secret-used-by-nextauth
+ALLOWED_ORIGINS=https://your-web-app.example
+```
+
+In production, RankKit refuses to start with the local JSON Store Snapshot or the development
+JWT secret. `JWT_SECRET` must match `NEXTAUTH_SECRET` from the web app because NextAuth issues the
+bearer token that the FastAPI backend verifies.
+
 Start a local Postgres container:
 
 ```powershell

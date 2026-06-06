@@ -43,6 +43,17 @@ class InfraCdkTests(unittest.TestCase):
         self.assertIn('"app": "python app.py"', cdk_json)
         self.assertIn('"rankkit"', cdk_json)
 
+    def test_ci_synthesizes_cdk_app(self) -> None:
+        workflow = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+
+        for expected in [
+            "name: CDK synth",
+            "working-directory: infra",
+            "pip install -r requirements.txt",
+            "npx aws-cdk@2.173.4 synth",
+        ]:
+            self.assertIn(expected, workflow)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -25,6 +25,7 @@ class ReadmeDocsTests(unittest.TestCase):
             "## CI Verification",
             "Postgres smoke",
             "backend Docker image",
+            "CDK synth",
             "## Postgres Adapter Smoke",
             "pnpm run db:smoke",
             "DISPUTED",

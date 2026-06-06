@@ -92,6 +92,32 @@ jobs:
         if: always()
         run: docker rm -f rankkit-api-smoke || true
 
+  cdk-synth:
+    name: CDK synth
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install infra dependencies
+        working-directory: infra
+        run: pip install -r requirements.txt
+
+      - name: Synthesize CDK app
+        working-directory: infra
+        run: npx aws-cdk@2.173.4 synth
+
   postgres-smoke:
     name: Postgres smoke
     runs-on: ubuntu-latest

@@ -161,8 +161,9 @@ GitHub Actions runs `.github/workflows/ci.yml` on pull requests and pushes to `m
 
 The Windows verification job installs the backend and web dependencies, runs `pnpm test`, builds
 the production web app, and runs the Playwright browser smoke test. The backend image job builds the
-backend Docker image. The Postgres smoke job applies Alembic migrations against a fresh PostgreSQL
-service and runs the SQLAlchemy adapter smoke path.
+backend Docker image and smoke-tests its `/health` endpoint. The CDK synth job installs infra
+dependencies and runs `cdk synth`. The Postgres smoke job applies Alembic migrations against a fresh
+PostgreSQL service and runs the SQLAlchemy adapter smoke path.
 
 Start a local Postgres container:
 

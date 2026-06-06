@@ -107,6 +107,11 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "pnpm run test:e2e",
             "Build backend image",
             "docker build --progress=plain -t rankkit-api ./backend",
+            "Run backend image",
+            "docker run -d --name rankkit-api-smoke",
+            "ENVIRONMENT=production",
+            "STORE_BACKEND=postgres",
+            "curl --fail http://127.0.0.1:8002/health",
             "python -m alembic upgrade head",
             "python -m app.db.smoke",
         ]:

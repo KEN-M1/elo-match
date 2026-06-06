@@ -66,6 +66,32 @@ jobs:
       - name: Build backend image
         run: docker build --progress=plain -t rankkit-api ./backend
 
+      - name: Run backend image
+        run: |
+          docker run -d --name rankkit-api-smoke \
+            -p 8002:8002 \
+            -e ENVIRONMENT=production \
+            -e STORE_BACKEND=postgres \
+            -e DATABASE_URL=postgresql+asyncpg://rankkit:rankkit@localhost:5432/rankkit \
+            -e JWT_SECRET=ci-production-secret-with-at-least-32-chars \
+            -e ALLOWED_ORIGINS=http://localhost:3000 \
+            rankkit-api
+
+          for attempt in $(seq 1 30); do
+            if curl --fail http://127.0.0.1:8002/health; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          docker logs rankkit-api-smoke
+          exit 1
+        shell: bash
+
+      - name: Stop backend image
+        if: always()
+        run: docker rm -f rankkit-api-smoke || true
+
   postgres-smoke:
     name: Postgres smoke
     runs-on: ubuntu-latest

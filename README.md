@@ -144,9 +144,11 @@ Run Alembic migrations before rolling out a new API image.
 
 ## AWS CDK Infrastructure
 
-The `infra/` folder contains the CDK app entrypoint and the initial `RankKitNetworkStack`. The
-network stack creates a two-AZ VPC, public and private subnets, one NAT gateway, and security groups
-for the ALB, ECS tasks, RDS PostgreSQL, and Redis cache.
+The `infra/` folder contains the CDK app entrypoint, `RankKitNetworkStack`, and
+`RankKitDatabaseStack`. The network stack creates a two-AZ VPC, public and private subnets, one NAT
+gateway, and security groups for the ALB, ECS tasks, RDS PostgreSQL, and Redis cache. The database
+stack creates a private PostgreSQL 16 RDS instance with generated Secrets Manager credentials,
+seven-day backups, deletion protection, and retained storage by default.
 
 From `infra/`, install CDK dependencies and synthesize the stack:
 

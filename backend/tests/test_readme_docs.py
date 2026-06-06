@@ -21,6 +21,7 @@ class ReadmeDocsTests(unittest.TestCase):
             "## Backend Container Image",
             "docker build -t rankkit-api ./backend",
             "## AWS CDK Infrastructure",
+            "RankKitDatabaseStack",
             "cdk synth",
             "## CI Verification",
             "Postgres smoke",

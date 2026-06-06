@@ -12,6 +12,10 @@ class InfraCdkTests(unittest.TestCase):
         self.assertIn("cdk.App()", app_source)
         self.assertIn("NetworkStack", app_source)
         self.assertIn("RankKitNetworkStack", app_source)
+        self.assertIn("DatabaseStack", app_source)
+        self.assertIn("RankKitDatabaseStack", app_source)
+        self.assertIn("network_stack.vpc", app_source)
+        self.assertIn("network_stack.rds_security_group", app_source)
         self.assertIn("app.synth()", app_source)
 
     def test_network_stack_defines_vpc_and_security_groups(self) -> None:
@@ -34,6 +38,31 @@ class InfraCdkTests(unittest.TestCase):
             "ec2.Port.tcp(5432)",
             "ec2.Port.tcp(6379)",
             "cdk.CfnOutput",
+        ]:
+            self.assertIn(expected, stack_source)
+
+    def test_database_stack_defines_rds_postgres(self) -> None:
+        stack_source = (REPO_ROOT / "infra" / "stacks" / "database_stack.py").read_text(encoding="utf-8")
+
+        for expected in [
+            "class DatabaseStack(cdk.Stack)",
+            "rds.DatabaseInstance",
+            "rds.DatabaseInstanceEngine.postgres",
+            'rds.PostgresEngineVersion.of("16.3", "16")',
+            "rds.Credentials.from_generated_secret",
+            "instance_type=ec2.InstanceType.of",
+            "ec2.InstanceClass.BURSTABLE3",
+            "ec2.InstanceSize.MICRO",
+            "vpc_subnets=ec2.SubnetSelection",
+            "ec2.SubnetType.PRIVATE_WITH_EGRESS",
+            "multi_az=False",
+            "allocated_storage=20",
+            "backup_retention=cdk.Duration.days(7)",
+            "removal_policy=cdk.RemovalPolicy.RETAIN",
+            "delete_automated_backups=False",
+            "CfnOutput",
+            "DatabaseEndpoint",
+            "DatabaseSecretArn",
         ]:
             self.assertIn(expected, stack_source)
 

@@ -55,6 +55,17 @@ jobs:
       - name: Run browser smoke
         run: pnpm run test:e2e
 
+  backend-image:
+    name: Backend image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: docker build --progress=plain -t rankkit-api ./backend
+
   postgres-smoke:
     name: Postgres smoke
     runs-on: ubuntu-latest

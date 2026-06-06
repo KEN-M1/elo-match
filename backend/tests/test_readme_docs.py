@@ -22,6 +22,7 @@ class ReadmeDocsTests(unittest.TestCase):
             "docker build -t rankkit-api ./backend",
             "## CI Verification",
             "Postgres smoke",
+            "backend Docker image",
             "## Postgres Adapter Smoke",
             "pnpm run db:smoke",
             "DISPUTED",

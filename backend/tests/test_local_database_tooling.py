@@ -105,6 +105,8 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "pnpm test",
             "pnpm run build:web",
             "pnpm run test:e2e",
+            "Build backend image",
+            "docker build --progress=plain -t rankkit-api ./backend",
             "python -m alembic upgrade head",
             "python -m app.db.smoke",
         ]:

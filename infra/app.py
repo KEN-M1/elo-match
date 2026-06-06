@@ -1,3 +1,10 @@
-"""CDK entry point placeholder for the post-MVP AWS deployment."""
+import aws_cdk as cdk
 
-print("RankKit CDK stacks will be added after the local MVP is green.")
+from stacks.network_stack import NetworkStack
+
+
+app = cdk.App()
+
+NetworkStack(app, "RankKitNetworkStack")
+
+app.synth()

@@ -12,7 +12,7 @@ The repository implements the PRD-first workflow requested for RankKit:
 - `docs/adr/` records durable architecture decisions.
 - `backend/` contains the FastAPI app shape and pure rating module.
 - `apps/web/` contains the Next.js app shell and typed client surface.
-- `infra/` contains CDK placeholders for later AWS work.
+- `infra/` contains the CDK app entrypoint and initial AWS network stack.
 
 ## Local Backend
 
@@ -141,6 +141,19 @@ docker build -t rankkit-api ./backend
 
 Run the container with production environment variables and a reachable Postgres `DATABASE_URL`.
 Run Alembic migrations before rolling out a new API image.
+
+## AWS CDK Infrastructure
+
+The `infra/` folder contains the CDK app entrypoint and the initial `RankKitNetworkStack`. The
+network stack creates a two-AZ VPC, public and private subnets, one NAT gateway, and security groups
+for the ALB, ECS tasks, RDS PostgreSQL, and Redis cache.
+
+From `infra/`, install CDK dependencies and synthesize the stack:
+
+```powershell
+pip install -r requirements.txt
+cdk synth
+```
 
 ## CI Verification
 

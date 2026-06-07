@@ -8,7 +8,7 @@ from stacks.network_stack import NetworkStack
 app = cdk.App()
 
 network_stack = NetworkStack(app, "RankKitNetworkStack")
-DatabaseStack(
+database_stack = DatabaseStack(
     app,
     "RankKitDatabaseStack",
     vpc=network_stack.vpc,
@@ -17,6 +17,8 @@ DatabaseStack(
 ComputeStack(
     app,
     "RankKitComputeStack",
+    database=database_stack.instance,
+    security_group=network_stack.ecs_security_group,
     vpc=network_stack.vpc,
 )
 

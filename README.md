@@ -160,7 +160,8 @@ and `RankKitComputeStack`. The network stack creates a two-AZ VPC, public and pr
 NAT gateway, and security groups for the ALB, ECS tasks, RDS PostgreSQL, and Redis cache. The
 database stack creates a private PostgreSQL 16 RDS instance with generated Secrets Manager
 credentials, seven-day backups, deletion protection, and retained storage by default. The compute
-stack creates the backend ECR repository and ECS cluster foundation.
+stack creates the backend ECR repository, ECS cluster foundation, and API task definition with
+database and JWT secret wiring.
 
 From `infra/`, install CDK dependencies and synthesize the stack:
 

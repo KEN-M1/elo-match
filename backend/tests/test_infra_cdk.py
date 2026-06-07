@@ -18,6 +18,8 @@ class InfraCdkTests(unittest.TestCase):
         self.assertIn("RankKitComputeStack", app_source)
         self.assertIn("network_stack.vpc", app_source)
         self.assertIn("network_stack.rds_security_group", app_source)
+        self.assertIn("network_stack.ecs_security_group", app_source)
+        self.assertIn("database_stack.instance", app_source)
         self.assertIn("app.synth()", app_source)
 
     def test_network_stack_defines_vpc_and_security_groups(self) -> None:
@@ -85,6 +87,24 @@ class InfraCdkTests(unittest.TestCase):
             "CfnOutput",
             "ApiRepositoryUri",
             "EcsClusterName",
+            "ecs.FargateTaskDefinition",
+            "cpu=512",
+            "memory_limit_mib=1024",
+            "ecs.ContainerImage.from_ecr_repository",
+            "ecs.Secret.from_secrets_manager",
+            "DATABASE_HOST",
+            "DATABASE_NAME",
+            "DATABASE_USER",
+            "DATABASE_PASSWORD",
+            "JwtSecretArn",
+            "JWT_SECRET",
+            "STORE_BACKEND",
+            "ENVIRONMENT",
+            "aws_logs.LogGroup",
+            "ecs.LogDriver.aws_logs",
+            "HealthCheck",
+            "urllib.request.urlopen",
+            "ApiTaskDefinitionArn",
         ]:
             self.assertIn(expected, stack_source)
 

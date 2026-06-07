@@ -1,5 +1,6 @@
 import aws_cdk as cdk
 
+from stacks.compute_stack import ComputeStack
 from stacks.database_stack import DatabaseStack
 from stacks.network_stack import NetworkStack
 
@@ -12,6 +13,11 @@ DatabaseStack(
     "RankKitDatabaseStack",
     vpc=network_stack.vpc,
     security_group=network_stack.rds_security_group,
+)
+ComputeStack(
+    app,
+    "RankKitComputeStack",
+    vpc=network_stack.vpc,
 )
 
 app.synth()

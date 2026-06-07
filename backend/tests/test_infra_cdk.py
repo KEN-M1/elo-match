@@ -14,6 +14,8 @@ class InfraCdkTests(unittest.TestCase):
         self.assertIn("RankKitNetworkStack", app_source)
         self.assertIn("DatabaseStack", app_source)
         self.assertIn("RankKitDatabaseStack", app_source)
+        self.assertIn("ComputeStack", app_source)
+        self.assertIn("RankKitComputeStack", app_source)
         self.assertIn("network_stack.vpc", app_source)
         self.assertIn("network_stack.rds_security_group", app_source)
         self.assertIn("app.synth()", app_source)
@@ -63,6 +65,26 @@ class InfraCdkTests(unittest.TestCase):
             "CfnOutput",
             "DatabaseEndpoint",
             "DatabaseSecretArn",
+        ]:
+            self.assertIn(expected, stack_source)
+
+    def test_compute_stack_defines_ecr_repository_and_ecs_cluster(self) -> None:
+        stack_source = (REPO_ROOT / "infra" / "stacks" / "compute_stack.py").read_text(encoding="utf-8")
+
+        for expected in [
+            "class ComputeStack(cdk.Stack)",
+            "ecr.Repository",
+            'repository_name="rankkit-api"',
+            "image_scan_on_push=True",
+            "lifecycle_rules=[",
+            "max_image_count=20",
+            "removal_policy=cdk.RemovalPolicy.RETAIN",
+            "ecs.Cluster",
+            'cluster_name="rankkit-cluster"',
+            "container_insights=True",
+            "CfnOutput",
+            "ApiRepositoryUri",
+            "EcsClusterName",
         ]:
             self.assertIn(expected, stack_source)
 

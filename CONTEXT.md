@@ -32,6 +32,7 @@
 - **CI Verification**: The GitHub Actions workflow that checks tests, production web build, browser smoke, migrations, and Postgres adapter smoke before deploy work is trusted.
 - **CDK Network Foundation**: The AWS infrastructure module that defines the deployable VPC, public/private subnet layout, NAT, and security-group seams for ALB, ECS, RDS, and cache resources.
 - **CDK Database Foundation**: The AWS infrastructure module that defines the private RDS PostgreSQL instance, generated secret, retention policy, backup window, and database endpoint outputs.
+- **CDK Compute Foundation**: The AWS infrastructure module that defines the backend ECR repository and ECS cluster foundation before task definitions, load balancing, and deployment wiring are added.
 - **RankKit Client**: The web module that converts backend transport responses into RankKit domain values for screens and workflows.
 - **Postgres Schema**: The future database table shape for RankKit users, leagues, members, invites, matches, and rating history; separate from the local Store Snapshot until a real adapter is implemented.
 - **Postgres Match Persistence**: The Postgres adapter module that owns Match row writes, Match row hydration, rating-result serialization, and Rating History write ordering behind the Store adapter seam.

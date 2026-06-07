@@ -58,6 +58,29 @@ class ComputeStack(cdk.Stack):
             "JwtSecret",
             jwt_secret_arn.value_as_string,
         )
+        allowed_origins = cdk.CfnParameter(
+            self,
+            "AllowedOrigins",
+            type="String",
+            default="https://replace-me.example",
+            description="Comma-separated web origins allowed to call the API.",
+        )
+        api_image_tag = cdk.CfnParameter(
+            self,
+            "ApiImageTag",
+            type="String",
+            default="latest",
+            description="ECR image tag to run for the API service.",
+        )
+        api_desired_count = cdk.CfnParameter(
+            self,
+            "ApiDesiredCount",
+            type="Number",
+            default=1,
+            min_value=1,
+            max_value=4,
+            description="Number of API tasks to run.",
+        )
 
         self.task_definition = ecs.FargateTaskDefinition(
             self,
@@ -84,13 +107,16 @@ class ComputeStack(cdk.Stack):
 
         self.api_container = self.task_definition.add_container(
             "ApiContainer",
-            image=ecs.ContainerImage.from_ecr_repository(self.api_repository),
+            image=ecs.ContainerImage.from_ecr_repository(
+                self.api_repository,
+                tag=api_image_tag.value_as_string,
+            ),
             logging=ecs.LogDriver.aws_logs(
                 stream_prefix="api",
                 log_group=self.log_group,
             ),
             environment={
-                "ALLOWED_ORIGINS": "https://replace-me.example",
+                "ALLOWED_ORIGINS": allowed_origins.value_as_string,
                 "DATABASE_HOST": database.db_instance_endpoint_address,
                 "DATABASE_NAME": "rankkit",
                 "DATABASE_PORT": database.db_instance_endpoint_port,
@@ -133,7 +159,7 @@ class ComputeStack(cdk.Stack):
             "ApiService",
             cluster=self.cluster,
             task_definition=self.task_definition,
-            desired_count=1,
+            desired_count=api_desired_count.value_as_number,
             security_groups=[security_group],
             vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
             assign_public_ip=False,

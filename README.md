@@ -170,6 +170,23 @@ pip install -r requirements.txt
 cdk synth
 ```
 
+Deploy-time parameters keep environment-specific values out of source:
+
+- `JwtSecretArn`: Secrets Manager ARN containing the shared `JWT_SECRET`/`NEXTAUTH_SECRET` value.
+- `AllowedOrigins`: comma-separated web origins allowed to call the API.
+- `ApiImageTag`: ECR image tag to run for the API service.
+- `ApiDesiredCount`: number of API tasks to run.
+
+Example compute deploy after the network/database stacks exist and an API image has been pushed:
+
+```powershell
+cdk deploy RankKitComputeStack `
+  --parameters RankKitComputeStack:JwtSecretArn=arn:aws:secretsmanager:us-east-1:123456789012:secret:rankkit/jwt `
+  --parameters RankKitComputeStack:AllowedOrigins=https://your-web-app.example `
+  --parameters RankKitComputeStack:ApiImageTag=main `
+  --parameters RankKitComputeStack:ApiDesiredCount=1
+```
+
 ## CI Verification
 
 GitHub Actions runs `.github/workflows/ci.yml` on pull requests and pushes to `main`.

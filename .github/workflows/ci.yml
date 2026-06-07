@@ -72,7 +72,11 @@ jobs:
             -p 8002:8002 \
             -e ENVIRONMENT=production \
             -e STORE_BACKEND=postgres \
-            -e DATABASE_URL=postgresql+asyncpg://rankkit:rankkit@localhost:5432/rankkit \
+            -e DATABASE_HOST=rankkit-db.example \
+            -e DATABASE_PORT=5432 \
+            -e DATABASE_NAME=rankkit \
+            -e DATABASE_USER=rankkit \
+            -e DATABASE_PASSWORD=ci-db-password \
             -e JWT_SECRET=ci-production-secret-with-at-least-32-chars \
             -e ALLOWED_ORIGINS=http://localhost:3000 \
             rankkit-api

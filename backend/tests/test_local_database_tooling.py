@@ -111,6 +111,8 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "docker run -d --name rankkit-api-smoke",
             "ENVIRONMENT=production",
             "STORE_BACKEND=postgres",
+            "DATABASE_HOST=rankkit-db.example",
+            "DATABASE_PASSWORD=ci-db-password",
             "curl --fail http://127.0.0.1:8002/health",
             "python -m alembic upgrade head",
             "python -m app.db.smoke",

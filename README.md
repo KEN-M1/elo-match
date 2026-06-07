@@ -12,7 +12,7 @@ The repository implements the PRD-first workflow requested for RankKit:
 - `docs/adr/` records durable architecture decisions.
 - `backend/` contains the FastAPI app shape and pure rating module.
 - `apps/web/` contains the Next.js app shell and typed client surface.
-- `infra/` contains the CDK app entrypoint and initial AWS network stack.
+- `infra/` contains the CDK app entrypoint and AWS network, database, and compute stacks.
 
 ## Local Backend
 
@@ -160,8 +160,8 @@ and `RankKitComputeStack`. The network stack creates a two-AZ VPC, public and pr
 NAT gateway, and security groups for the ALB, ECS tasks, RDS PostgreSQL, and Redis cache. The
 database stack creates a private PostgreSQL 16 RDS instance with generated Secrets Manager
 credentials, seven-day backups, deletion protection, and retained storage by default. The compute
-stack creates the backend ECR repository, ECS cluster foundation, and API task definition with
-database and JWT secret wiring.
+stack creates the backend ECR repository, ECS cluster, API task definition, Fargate service, and
+internet-facing application load balancer with `/health` target checks.
 
 From `infra/`, install CDK dependencies and synthesize the stack:
 

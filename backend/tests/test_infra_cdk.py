@@ -19,6 +19,7 @@ class InfraCdkTests(unittest.TestCase):
         self.assertIn("network_stack.vpc", app_source)
         self.assertIn("network_stack.rds_security_group", app_source)
         self.assertIn("network_stack.ecs_security_group", app_source)
+        self.assertIn("network_stack.alb_security_group", app_source)
         self.assertIn("database_stack.instance", app_source)
         self.assertIn("app.synth()", app_source)
 
@@ -105,6 +106,16 @@ class InfraCdkTests(unittest.TestCase):
             "HealthCheck",
             "urllib.request.urlopen",
             "ApiTaskDefinitionArn",
+            "elbv2.ApplicationLoadBalancer",
+            "internet_facing=True",
+            "ecs.FargateService",
+            "desired_count=1",
+            "assign_public_ip=False",
+            "add_listener",
+            "add_targets",
+            "health_check=elbv2.HealthCheck",
+            "LoadBalancerDnsName",
+            "ApiServiceName",
         ]:
             self.assertIn(expected, stack_source)
 

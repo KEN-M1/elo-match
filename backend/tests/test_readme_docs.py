@@ -23,6 +23,8 @@ class ReadmeDocsTests(unittest.TestCase):
             "## AWS CDK Infrastructure",
             "RankKitDatabaseStack",
             "RankKitComputeStack",
+            "application load balancer",
+            "Fargate service",
             "cdk synth",
             "## CI Verification",
             "Postgres smoke",

@@ -2,6 +2,7 @@ from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_ecr as ecr
 from aws_cdk import aws_ecs as ecs
 from aws_cdk import aws_iam as iam
+from aws_cdk import aws_elasticloadbalancingv2 as elbv2
 from aws_cdk import aws_logs as aws_logs
 from aws_cdk import aws_rds as rds
 from aws_cdk import aws_secretsmanager as secretsmanager
@@ -16,6 +17,7 @@ class ComputeStack(cdk.Stack):
         construct_id: str,
         *,
         database: rds.DatabaseInstance,
+        load_balancer_security_group: ec2.ISecurityGroup,
         security_group: ec2.ISecurityGroup,
         vpc: ec2.IVpc,
         **kwargs,
@@ -119,6 +121,38 @@ class ComputeStack(cdk.Stack):
         )
         self.api_container.add_port_mappings(ecs.PortMapping(container_port=8002))
 
+        self.load_balancer = elbv2.ApplicationLoadBalancer(
+            self,
+            "ApiLoadBalancer",
+            vpc=vpc,
+            internet_facing=True,
+            security_group=load_balancer_security_group,
+        )
+        self.service = ecs.FargateService(
+            self,
+            "ApiService",
+            cluster=self.cluster,
+            task_definition=self.task_definition,
+            desired_count=1,
+            security_groups=[security_group],
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
+            assign_public_ip=False,
+        )
+        self.http_listener = self.load_balancer.add_listener(
+            "HttpListener",
+            port=80,
+            open=False,
+        )
+        self.http_listener.add_targets(
+            "ApiTargets",
+            port=8002,
+            protocol=elbv2.ApplicationProtocol.HTTP,
+            targets=[self.service],
+            health_check=elbv2.HealthCheck(path="/health", healthy_http_codes="200"),
+        )
+
         cdk.CfnOutput(self, "ApiRepositoryUri", value=self.api_repository.repository_uri)
         cdk.CfnOutput(self, "EcsClusterName", value=self.cluster.cluster_name)
         cdk.CfnOutput(self, "ApiTaskDefinitionArn", value=self.task_definition.task_definition_arn)
+        cdk.CfnOutput(self, "ApiServiceName", value=self.service.service_name)
+        cdk.CfnOutput(self, "LoadBalancerDnsName", value=self.load_balancer.load_balancer_dns_name)

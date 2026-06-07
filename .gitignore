@@ -17,3 +17,4 @@ test-results/
 *.sqlite3
 *.db
 backend/data/
+infra/cdk.out/

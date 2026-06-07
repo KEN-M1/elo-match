@@ -18,6 +18,7 @@ ComputeStack(
     app,
     "RankKitComputeStack",
     database=database_stack.instance,
+    load_balancer_security_group=network_stack.alb_security_group,
     security_group=network_stack.ecs_security_group,
     vpc=network_stack.vpc,
 )

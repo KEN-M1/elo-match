@@ -46,6 +46,8 @@ class ReadmeDocsTests(unittest.TestCase):
             "ENVIRONMENT=production",
             "STORE_BACKEND=postgres",
             "ALLOWED_ORIGINS=https://your-web-app.example",
+            "DATABASE_HOST=your-rds-endpoint.example",
+            "DATABASE_PASSWORD=replace-with-rds-secret-password",
             "JWT_SECRET=replace-with-the-same-32-character-or-longer-secret-used-by-nextauth",
             "NEXTAUTH_SECRET=replace-with-the-same-32-character-or-longer-secret-used-by-backend",
             "AUTH_REQUIRED=true",

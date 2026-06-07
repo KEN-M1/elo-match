@@ -17,6 +17,25 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 class RuntimeTests(unittest.TestCase):
+    def test_settings_can_build_database_url_from_injected_components(self) -> None:
+        settings = Settings(
+            database_host="rankkit-db.example",
+            database_name="rankkit",
+            database_user="rankkit",
+            database_password="p@ss word",
+        )
+
+        self.assertEqual(
+            settings.effective_database_url(),
+            "postgresql+asyncpg://rankkit:p%40ss%20word@rankkit-db.example:5432/rankkit",
+        )
+
+    def test_settings_rejects_partial_database_components(self) -> None:
+        settings = Settings(database_host="rankkit-db.example", database_user="rankkit")
+
+        with self.assertRaisesRegex(ValueError, "Database component settings"):
+            settings.effective_database_url()
+
     def test_create_runtime_uses_configured_local_snapshot_store(self) -> None:
         with TemporaryDirectory() as temp_dir:
             data_path = Path(temp_dir) / "rankkit.json"
@@ -37,13 +56,16 @@ class RuntimeTests(unittest.TestCase):
     def test_create_runtime_can_select_postgres_store_backend(self) -> None:
         runtime = create_runtime(
             Settings(
-                database_url="postgresql+asyncpg://rankkit:rankkit@localhost:5432/rankkit",
+                database_host="rankkit-db.example",
+                database_name="rankkit",
+                database_user="rankkit",
+                database_password="secret",
                 store_backend="postgres",
             )
         )
 
         self.assertIsInstance(runtime.store, PostgresRuntimeStore)
-        self.assertEqual(runtime.store.database_url, "postgresql+asyncpg://rankkit:rankkit@localhost:5432/rankkit")
+        self.assertEqual(runtime.store.database_url, "postgresql+asyncpg://rankkit:secret@rankkit-db.example:5432/rankkit")
         run(runtime.store.close())
 
     def test_create_runtime_rejects_unknown_store_backend(self) -> None:
@@ -72,6 +94,16 @@ class RuntimeTests(unittest.TestCase):
                 Settings(
                     database_url="postgresql+asyncpg://rankkit:rankkit@localhost:5432/rankkit",
                     environment="production",
+                    store_backend="postgres",
+                )
+            )
+
+    def test_create_runtime_rejects_default_database_url_in_production(self) -> None:
+        with self.assertRaisesRegex(ValueError, "DATABASE_URL must be set"):
+            create_runtime(
+                Settings(
+                    environment="production",
+                    jwt_secret="a-production-secret-with-enough-entropy",
                     store_backend="postgres",
                 )
             )

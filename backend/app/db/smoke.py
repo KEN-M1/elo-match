@@ -40,7 +40,7 @@ class WriteSmokeResult:
 
 
 async def check_database() -> tuple[str, set[str]]:
-    engine = create_async_engine(settings.database_url)
+    engine = create_async_engine(settings.effective_database_url())
     try:
         async with engine.connect() as connection:
             version = (
@@ -203,7 +203,7 @@ async def main() -> None:
     for table in sorted(tables):
         print(f"- {table}")
 
-    engine = create_async_engine(settings.database_url)
+    engine = create_async_engine(settings.effective_database_url())
     try:
         async with engine.connect() as connection:
             write_result = await check_write_round_trip(connection)

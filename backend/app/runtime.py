@@ -32,7 +32,7 @@ def create_store(app_settings: Settings):
     if app_settings.store_backend == "local":
         return RankKitStore(app_settings.local_data_path)
     if app_settings.store_backend == "postgres":
-        return PostgresRuntimeStore(app_settings.database_url)
+        return PostgresRuntimeStore(app_settings.effective_database_url())
     raise ValueError("STORE_BACKEND must be 'local' or 'postgres'.")
 
 

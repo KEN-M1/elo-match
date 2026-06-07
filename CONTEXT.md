@@ -26,6 +26,7 @@
 - **Route Policy**: The backend module that owns route response shape and HTTP error mapping while route handlers keep URL-to-Store intent readable.
 - **Runtime Composition**: The backend startup module that assembles the Store adapter, Auth Session, and Route Policy so deployment-specific wiring can change without rewriting route handlers.
 - **Runtime Store Backend**: The configured Store adapter mode. `local` uses the Store Snapshot for local demos; `postgres` uses Postgres runtime connections through the Postgres adapter.
+- **Database URL Resolution**: The backend configuration seam that accepts either a full `DATABASE_URL` or ECS-friendly database host/name/user/password components and resolves them into the SQLAlchemy async URL used by runtime, Alembic, and smoke checks.
 - **Production Config Guardrail**: The Runtime Composition validation step that keeps local defaults usable for demos while refusing insecure production settings such as the local Store adapter or the development JWT secret.
 - **Production Runtime Entrypoint**: The package and script contract for starting RankKit services without development reload behavior.
 - **Backend Container Image**: The Docker build artifact for the FastAPI API, containing runtime dependencies, API code, Alembic migrations, and a healthchecked uvicorn command.

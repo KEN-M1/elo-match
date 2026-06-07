@@ -106,6 +106,17 @@ JWT_SECRET=replace-with-the-same-32-character-or-longer-secret-used-by-nextauth
 ALLOWED_ORIGINS=https://your-web-app.example
 ```
 
+Instead of `DATABASE_URL`, deployed runtime can inject separate database components, which fits ECS
+Secrets Manager wiring:
+
+```powershell
+DATABASE_HOST=your-rds-endpoint.example
+DATABASE_PORT=5432
+DATABASE_NAME=rankkit
+DATABASE_USER=rankkit
+DATABASE_PASSWORD=replace-with-rds-secret-password
+```
+
 In production, RankKit refuses to start with the local JSON Store Snapshot or the development
 JWT secret. `JWT_SECRET` must match `NEXTAUTH_SECRET` from the web app because NextAuth issues the
 bearer token that the FastAPI backend verifies.

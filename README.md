@@ -183,9 +183,20 @@ Deploy-time parameters keep environment-specific values out of source:
 - `JwtSecretArn`: Secrets Manager ARN containing the shared `JWT_SECRET`/`NEXTAUTH_SECRET` value.
 - `AllowedOrigins`: comma-separated web origins allowed to call the API.
 - `ApiImageTag`: ECR image tag to run for the API service.
-- `ApiDesiredCount`: number of API tasks to run.
+- `ApiDesiredCount`: number of API tasks to run. Use `0` for the first compute deploy before an image exists.
 
-Example compute deploy after the network/database stacks exist and an API image has been pushed:
+Bootstrap the compute stack with zero API tasks so the ECR repository exists before the first image
+push:
+
+```powershell
+cdk deploy RankKitComputeStack `
+  --parameters RankKitComputeStack:JwtSecretArn=arn:aws:secretsmanager:us-east-1:123456789012:secret:rankkit/jwt `
+  --parameters RankKitComputeStack:AllowedOrigins=https://your-web-app.example `
+  --parameters RankKitComputeStack:ApiImageTag=main `
+  --parameters RankKitComputeStack:ApiDesiredCount=0
+```
+
+After publishing the image, redeploy the compute stack with running API tasks:
 
 ```powershell
 cdk deploy RankKitComputeStack `

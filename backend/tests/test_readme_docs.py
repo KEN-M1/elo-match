@@ -29,6 +29,7 @@ class ReadmeDocsTests(unittest.TestCase):
             "AllowedOrigins",
             "ApiImageTag",
             "ApiDesiredCount",
+            "ApiDesiredCount=0",
             "cdk synth",
             "cdk deploy RankKitComputeStack",
             "## CI Verification",

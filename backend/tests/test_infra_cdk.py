@@ -103,6 +103,7 @@ class InfraCdkTests(unittest.TestCase):
             "ApiDesiredCount",
             "value_as_string",
             "value_as_number",
+            "min_value=0",
             "JWT_SECRET",
             "STORE_BACKEND",
             "ENVIRONMENT",

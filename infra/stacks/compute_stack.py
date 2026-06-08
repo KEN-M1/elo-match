@@ -77,9 +77,9 @@ class ComputeStack(cdk.Stack):
             "ApiDesiredCount",
             type="Number",
             default=1,
-            min_value=1,
+            min_value=0,
             max_value=4,
-            description="Number of API tasks to run.",
+            description="Number of API tasks to run. Use 0 for first deploy before an image is pushed.",
         )
 
         self.task_definition = ecs.FargateTaskDefinition(

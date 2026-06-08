@@ -43,6 +43,10 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             scripts["deploy:api-image"],
         )
         self.assertEqual(
+            "powershell -ExecutionPolicy Bypass -File scripts/publish-web-image.ps1",
+            scripts["deploy:web-image"],
+        )
+        self.assertEqual(
             "powershell -ExecutionPolicy Bypass -File scripts/deploy-api-infra.ps1",
             scripts["deploy:api-infra"],
         )
@@ -144,6 +148,23 @@ class LocalDatabaseToolingTests(unittest.TestCase):
         ]:
             self.assertIn(expected, script)
 
+    def test_publish_web_image_script_builds_tags_and_pushes_ecr_image(self) -> None:
+        script = (REPO_ROOT / "scripts" / "publish-web-image.ps1").read_text(encoding="utf-8")
+
+        for expected in [
+            "param(",
+            "[Parameter(Mandatory=$true)]",
+            "$RepositoryUri",
+            "$ImageTag",
+            "aws ecr get-login-password",
+            "docker login --username AWS --password-stdin",
+            "docker build --progress=plain -f apps/web/Dockerfile -t",
+            "docker tag",
+            "docker push",
+            "if ($LASTEXITCODE -ne 0)",
+        ]:
+            self.assertIn(expected, script)
+
     def test_deploy_api_infra_script_passes_cdk_parameters(self) -> None:
         script = (REPO_ROOT / "scripts" / "deploy-api-infra.ps1").read_text(encoding="utf-8")
 
@@ -154,12 +175,20 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "$AllowedOrigins",
             "$ApiImageTag",
             "$ApiDesiredCount",
+            "$WebImageTag",
+            "$WebDesiredCount",
+            "$WebAppUrl",
+            "$AuthRequired",
             "Push-Location $infraRoot",
             "npx.cmd aws-cdk@2.173.4 deploy RankKitComputeStack",
             '--parameters "RankKitComputeStack:JwtSecretArn=$JwtSecretArn"',
             '--parameters "RankKitComputeStack:AllowedOrigins=$AllowedOrigins"',
             '--parameters "RankKitComputeStack:ApiImageTag=$ApiImageTag"',
             '--parameters "RankKitComputeStack:ApiDesiredCount=$ApiDesiredCount"',
+            '--parameters "RankKitComputeStack:WebImageTag=$WebImageTag"',
+            '--parameters "RankKitComputeStack:WebDesiredCount=$WebDesiredCount"',
+            '--parameters "RankKitComputeStack:WebAppUrl=$WebAppUrl"',
+            '--parameters "RankKitComputeStack:AuthRequired=$AuthRequired"',
             "--require-approval never",
             "if ($LASTEXITCODE -ne 0)",
         ]:

@@ -172,6 +172,14 @@ Build the web image from the repository root:
 docker build -f apps/web/Dockerfile -t rankkit-web .
 ```
 
+Publish the image to the web ECR repository output by `RankKitComputeStack`:
+
+```powershell
+pnpm run deploy:web-image -- `
+  -RepositoryUri 123456789012.dkr.ecr.us-east-1.amazonaws.com/rankkit-web `
+  -ImageTag main
+```
+
 Run the image with the production API URL and shared auth secret:
 
 ```powershell
@@ -189,8 +197,8 @@ and `RankKitComputeStack`. The network stack creates a two-AZ VPC, public and pr
 NAT gateway, and security groups for the ALB, ECS tasks, RDS PostgreSQL, and Redis cache. The
 database stack creates a private PostgreSQL 16 RDS instance with generated Secrets Manager
 credentials, seven-day backups, deletion protection, and retained storage by default. The compute
-stack creates the backend ECR repository, ECS cluster, API task definition, Fargate service, and
-internet-facing application load balancer with `/health` target checks.
+stack creates backend and web ECR repositories, the ECS cluster, API and web task definitions,
+Fargate services, and internet-facing application load balancers with health checks.
 
 From `infra/`, install CDK dependencies and synthesize the stack:
 
@@ -205,26 +213,38 @@ Deploy-time parameters keep environment-specific values out of source:
 - `AllowedOrigins`: comma-separated web origins allowed to call the API.
 - `ApiImageTag`: ECR image tag to run for the API service.
 - `ApiDesiredCount`: number of API tasks to run. Use `0` for the first compute deploy before an image exists.
+- `WebImageTag`: ECR image tag to run for the web service.
+- `WebDesiredCount`: number of web tasks to run. Use `0` for the first compute deploy before an image exists.
+- `WebAppUrl`: public web origin used by NextAuth.
+- `AuthRequired`: whether the web app requires Google auth for protected routes.
 
-Bootstrap the compute stack with zero API tasks so the ECR repository exists before the first image
-push:
+Bootstrap the compute stack with zero API and web tasks so both ECR repositories exist before the
+first image pushes:
 
 ```powershell
 pnpm run deploy:api-infra -- `
   -JwtSecretArn arn:aws:secretsmanager:us-east-1:123456789012:secret:rankkit/jwt `
   -AllowedOrigins https://your-web-app.example `
   -ApiImageTag main `
-  -ApiDesiredCount 0
+  -ApiDesiredCount 0 `
+  -WebImageTag main `
+  -WebDesiredCount 0 `
+  -WebAppUrl https://your-web-app.example `
+  -AuthRequired true
 ```
 
-After publishing the image, redeploy the compute stack with running API tasks:
+After publishing the images, redeploy the compute stack with running API and web tasks:
 
 ```powershell
 pnpm run deploy:api-infra -- `
   -JwtSecretArn arn:aws:secretsmanager:us-east-1:123456789012:secret:rankkit/jwt `
   -AllowedOrigins https://your-web-app.example `
   -ApiImageTag main `
-  -ApiDesiredCount 1
+  -ApiDesiredCount 1 `
+  -WebImageTag main `
+  -WebDesiredCount 1 `
+  -WebAppUrl https://your-web-app.example `
+  -AuthRequired true
 ```
 
 ## CI Verification

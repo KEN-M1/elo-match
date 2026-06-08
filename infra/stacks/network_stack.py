@@ -48,8 +48,13 @@ class NetworkStack(cdk.Stack):
             self,
             "EcsSecurityGroup",
             vpc=self.vpc,
-            description="Allow RankKit API traffic only from the ALB.",
+            description="Allow RankKit app traffic only from the ALB.",
             allow_all_outbound=True,
+        )
+        self.ecs_security_group.add_ingress_rule(
+            self.alb_security_group,
+            ec2.Port.tcp(3000),
+            "Allow web traffic from the ALB.",
         )
         self.ecs_security_group.add_ingress_rule(
             self.alb_security_group,

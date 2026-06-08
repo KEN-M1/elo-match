@@ -38,6 +38,19 @@ class ComputeStack(cdk.Stack):
             ],
             removal_policy=cdk.RemovalPolicy.RETAIN,
         )
+        self.web_repository = ecr.Repository(
+            self,
+            "WebRepository",
+            repository_name="rankkit-web",
+            image_scan_on_push=True,
+            lifecycle_rules=[
+                ecr.LifecycleRule(
+                    description="Keep the latest 20 web images.",
+                    max_image_count=20,
+                )
+            ],
+            removal_policy=cdk.RemovalPolicy.RETAIN,
+        )
 
         self.cluster = ecs.Cluster(
             self,
@@ -80,6 +93,37 @@ class ComputeStack(cdk.Stack):
             min_value=0,
             max_value=4,
             description="Number of API tasks to run. Use 0 for first deploy before an image is pushed.",
+        )
+        web_image_tag = cdk.CfnParameter(
+            self,
+            "WebImageTag",
+            type="String",
+            default="latest",
+            description="ECR image tag to run for the web service.",
+        )
+        web_desired_count = cdk.CfnParameter(
+            self,
+            "WebDesiredCount",
+            type="Number",
+            default=1,
+            min_value=0,
+            max_value=4,
+            description="Number of web tasks to run. Use 0 for first deploy before an image is pushed.",
+        )
+        web_app_url = cdk.CfnParameter(
+            self,
+            "WebAppUrl",
+            type="String",
+            default="https://replace-me.example",
+            description="Public web origin used by NextAuth.",
+        )
+        auth_required = cdk.CfnParameter(
+            self,
+            "AuthRequired",
+            type="String",
+            default="true",
+            allowed_values=["true", "false"],
+            description="Whether the web app should require Google auth for protected routes.",
         )
 
         self.task_definition = ecs.FargateTaskDefinition(
@@ -177,8 +221,98 @@ class ComputeStack(cdk.Stack):
             health_check=elbv2.HealthCheck(path="/health", healthy_http_codes="200"),
         )
 
+        self.web_task_definition = ecs.FargateTaskDefinition(
+            self,
+            "WebTaskDefinition",
+            cpu=512,
+            memory_limit_mib=1024,
+        )
+        jwt_secret.grant_read(self.web_task_definition.task_role)
+        self.web_task_definition.task_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=["secretsmanager:GetSecretValue"],
+                resources=[jwt_secret.secret_arn],
+            )
+        )
+
+        self.web_log_group = aws_logs.LogGroup(
+            self,
+            "WebLogGroup",
+            log_group_name="/rankkit/web",
+            retention=aws_logs.RetentionDays.ONE_MONTH,
+            removal_policy=cdk.RemovalPolicy.RETAIN,
+        )
+
+        self.web_container = self.web_task_definition.add_container(
+            "WebContainer",
+            image=ecs.ContainerImage.from_ecr_repository(
+                self.web_repository,
+                tag=web_image_tag.value_as_string,
+            ),
+            logging=ecs.LogDriver.aws_logs(
+                stream_prefix="web",
+                log_group=self.web_log_group,
+            ),
+            environment={
+                "AUTH_REQUIRED": auth_required.value_as_string,
+                "NEXT_PUBLIC_API_URL": cdk.Fn.join(
+                    "",
+                    ["http://", self.load_balancer.load_balancer_dns_name],
+                ),
+                "NEXTAUTH_URL": web_app_url.value_as_string,
+            },
+            secrets={
+                "NEXTAUTH_SECRET": ecs.Secret.from_secrets_manager(jwt_secret),
+            },
+            health_check=ecs.HealthCheck(
+                command=[
+                    "CMD-SHELL",
+                    "node -e \"fetch('http://localhost:3000').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+                ],
+                interval=cdk.Duration.seconds(30),
+                timeout=cdk.Duration.seconds(5),
+                retries=3,
+                start_period=cdk.Duration.seconds(30),
+            ),
+        )
+        self.web_container.add_port_mappings(ecs.PortMapping(container_port=3000))
+
+        self.web_load_balancer = elbv2.ApplicationLoadBalancer(
+            self,
+            "WebLoadBalancer",
+            vpc=vpc,
+            internet_facing=True,
+            security_group=load_balancer_security_group,
+        )
+        self.web_service = ecs.FargateService(
+            self,
+            "WebService",
+            cluster=self.cluster,
+            task_definition=self.web_task_definition,
+            desired_count=web_desired_count.value_as_number,
+            security_groups=[security_group],
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
+            assign_public_ip=False,
+        )
+        self.web_http_listener = self.web_load_balancer.add_listener(
+            "WebHttpListener",
+            port=80,
+            open=False,
+        )
+        self.web_http_listener.add_targets(
+            "WebTargets",
+            port=3000,
+            protocol=elbv2.ApplicationProtocol.HTTP,
+            targets=[self.web_service],
+            health_check=elbv2.HealthCheck(path="/", healthy_http_codes="200-399"),
+        )
+
         cdk.CfnOutput(self, "ApiRepositoryUri", value=self.api_repository.repository_uri)
+        cdk.CfnOutput(self, "WebRepositoryUri", value=self.web_repository.repository_uri)
         cdk.CfnOutput(self, "EcsClusterName", value=self.cluster.cluster_name)
         cdk.CfnOutput(self, "ApiTaskDefinitionArn", value=self.task_definition.task_definition_arn)
+        cdk.CfnOutput(self, "WebTaskDefinitionArn", value=self.web_task_definition.task_definition_arn)
         cdk.CfnOutput(self, "ApiServiceName", value=self.service.service_name)
+        cdk.CfnOutput(self, "WebServiceName", value=self.web_service.service_name)
         cdk.CfnOutput(self, "LoadBalancerDnsName", value=self.load_balancer.load_balancer_dns_name)
+        cdk.CfnOutput(self, "WebLoadBalancerDnsName", value=self.web_load_balancer.load_balancer_dns_name)

@@ -35,6 +35,9 @@ class ReadmeDocsTests(unittest.TestCase):
             "WebImageTag",
             "WebDesiredCount",
             "WebAppUrl",
+            "GoogleClientId",
+            "GoogleClientSecretArn",
+            "/api/auth/callback/google",
             "-ApiDesiredCount 0",
             "-WebDesiredCount 0",
             "cdk synth",
@@ -67,6 +70,8 @@ class ReadmeDocsTests(unittest.TestCase):
             "JWT_SECRET=replace-with-the-same-32-character-or-longer-secret-used-by-nextauth",
             "NEXTAUTH_SECRET=replace-with-the-same-32-character-or-longer-secret-used-by-backend",
             "AUTH_REQUIRED=true",
+            "GOOGLE_CLIENT_ID=your-google-client-id",
+            "GOOGLE_CLIENT_SECRET=your-google-client-secret",
         ]:
             self.assertIn(expected, env_example)
 

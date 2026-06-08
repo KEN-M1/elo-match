@@ -71,6 +71,23 @@ class ComputeStack(cdk.Stack):
             "JwtSecret",
             jwt_secret_arn.value_as_string,
         )
+        google_client_secret_arn = cdk.CfnParameter(
+            self,
+            "GoogleClientSecretArn",
+            type="String",
+            description="Secrets Manager ARN containing the Google OAuth client secret.",
+        )
+        google_client_secret = secretsmanager.Secret.from_secret_complete_arn(
+            self,
+            "GoogleClientSecret",
+            google_client_secret_arn.value_as_string,
+        )
+        google_client_id = cdk.CfnParameter(
+            self,
+            "GoogleClientId",
+            type="String",
+            description="Google OAuth client ID for the web app.",
+        )
         allowed_origins = cdk.CfnParameter(
             self,
             "AllowedOrigins",
@@ -228,10 +245,11 @@ class ComputeStack(cdk.Stack):
             memory_limit_mib=1024,
         )
         jwt_secret.grant_read(self.web_task_definition.task_role)
+        google_client_secret.grant_read(self.web_task_definition.task_role)
         self.web_task_definition.task_role.add_to_policy(
             iam.PolicyStatement(
                 actions=["secretsmanager:GetSecretValue"],
-                resources=[jwt_secret.secret_arn],
+                resources=[jwt_secret.secret_arn, google_client_secret.secret_arn],
             )
         )
 
@@ -255,6 +273,7 @@ class ComputeStack(cdk.Stack):
             ),
             environment={
                 "AUTH_REQUIRED": auth_required.value_as_string,
+                "GOOGLE_CLIENT_ID": google_client_id.value_as_string,
                 "NEXT_PUBLIC_API_URL": cdk.Fn.join(
                     "",
                     ["http://", self.load_balancer.load_balancer_dns_name],
@@ -262,6 +281,7 @@ class ComputeStack(cdk.Stack):
                 "NEXTAUTH_URL": web_app_url.value_as_string,
             },
             secrets={
+                "GOOGLE_CLIENT_SECRET": ecs.Secret.from_secrets_manager(google_client_secret),
                 "NEXTAUTH_SECRET": ecs.Secret.from_secrets_manager(jwt_secret),
             },
             health_check=ecs.HealthCheck(

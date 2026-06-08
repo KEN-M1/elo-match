@@ -179,6 +179,8 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "$WebDesiredCount",
             "$WebAppUrl",
             "$AuthRequired",
+            "$GoogleClientId",
+            "$GoogleClientSecretArn",
             "Push-Location $infraRoot",
             "npx.cmd aws-cdk@2.173.4 deploy RankKitComputeStack",
             '--parameters "RankKitComputeStack:JwtSecretArn=$JwtSecretArn"',
@@ -189,6 +191,8 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             '--parameters "RankKitComputeStack:WebDesiredCount=$WebDesiredCount"',
             '--parameters "RankKitComputeStack:WebAppUrl=$WebAppUrl"',
             '--parameters "RankKitComputeStack:AuthRequired=$AuthRequired"',
+            '--parameters "RankKitComputeStack:GoogleClientId=$GoogleClientId"',
+            '--parameters "RankKitComputeStack:GoogleClientSecretArn=$GoogleClientSecretArn"',
             "--require-approval never",
             "if ($LASTEXITCODE -ne 0)",
         ]:

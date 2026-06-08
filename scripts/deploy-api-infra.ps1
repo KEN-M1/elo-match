@@ -3,6 +3,12 @@ param(
   [string]$JwtSecretArn,
 
   [Parameter(Mandatory=$true)]
+  [string]$GoogleClientId,
+
+  [Parameter(Mandatory=$true)]
+  [string]$GoogleClientSecretArn,
+
+  [Parameter(Mandatory=$true)]
   [string]$AllowedOrigins,
 
   [string]$ApiImageTag = "main",
@@ -27,6 +33,8 @@ Push-Location $infraRoot
 try {
   & npx.cmd aws-cdk@2.173.4 deploy RankKitComputeStack `
     --parameters "RankKitComputeStack:JwtSecretArn=$JwtSecretArn" `
+    --parameters "RankKitComputeStack:GoogleClientId=$GoogleClientId" `
+    --parameters "RankKitComputeStack:GoogleClientSecretArn=$GoogleClientSecretArn" `
     --parameters "RankKitComputeStack:AllowedOrigins=$AllowedOrigins" `
     --parameters "RankKitComputeStack:ApiImageTag=$ApiImageTag" `
     --parameters "RankKitComputeStack:ApiDesiredCount=$ApiDesiredCount" `

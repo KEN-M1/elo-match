@@ -51,6 +51,10 @@ Configure the Google OAuth client with `http://localhost:3000/api/auth/callback/
 authorized redirect URI. The dev web script preserves OAuth values and refreshes only
 `NEXT_PUBLIC_API_URL`.
 
+For a deployed web app, add `https://your-web-app.example/api/auth/callback/google` to the same
+Google OAuth client and store the Google client secret in AWS Secrets Manager. Pass the client ID
+and secret ARN to the compute stack deploy command.
+
 ## Tests
 
 ```powershell
@@ -187,6 +191,8 @@ docker run --rm -p 3000:3000 `
   -e NEXT_PUBLIC_API_URL=https://your-api.example `
   -e NEXTAUTH_URL=https://your-web-app.example `
   -e NEXTAUTH_SECRET=replace-with-the-same-32-character-or-longer-secret-used-by-backend `
+  -e GOOGLE_CLIENT_ID=your-google-client-id `
+  -e GOOGLE_CLIENT_SECRET=your-google-client-secret `
   rankkit-web
 ```
 
@@ -217,6 +223,8 @@ Deploy-time parameters keep environment-specific values out of source:
 - `WebDesiredCount`: number of web tasks to run. Use `0` for the first compute deploy before an image exists.
 - `WebAppUrl`: public web origin used by NextAuth.
 - `AuthRequired`: whether the web app requires Google auth for protected routes.
+- `GoogleClientId`: Google OAuth client ID for the web app.
+- `GoogleClientSecretArn`: Secrets Manager ARN containing the Google OAuth client secret.
 
 Bootstrap the compute stack with zero API and web tasks so both ECR repositories exist before the
 first image pushes:
@@ -224,6 +232,8 @@ first image pushes:
 ```powershell
 pnpm run deploy:api-infra -- `
   -JwtSecretArn arn:aws:secretsmanager:us-east-1:123456789012:secret:rankkit/jwt `
+  -GoogleClientId your-google-client-id `
+  -GoogleClientSecretArn arn:aws:secretsmanager:us-east-1:123456789012:secret:rankkit/google-client-secret `
   -AllowedOrigins https://your-web-app.example `
   -ApiImageTag main `
   -ApiDesiredCount 0 `
@@ -238,6 +248,8 @@ After publishing the images, redeploy the compute stack with running API and web
 ```powershell
 pnpm run deploy:api-infra -- `
   -JwtSecretArn arn:aws:secretsmanager:us-east-1:123456789012:secret:rankkit/jwt `
+  -GoogleClientId your-google-client-id `
+  -GoogleClientSecretArn arn:aws:secretsmanager:us-east-1:123456789012:secret:rankkit/google-client-secret `
   -AllowedOrigins https://your-web-app.example `
   -ApiImageTag main `
   -ApiDesiredCount 1 `

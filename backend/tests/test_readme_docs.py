@@ -20,6 +20,7 @@ class ReadmeDocsTests(unittest.TestCase):
             "pnpm run start:web",
             "## Backend Container Image",
             "docker build -t rankkit-api ./backend",
+            "pnpm run deploy:api-image",
             "## AWS CDK Infrastructure",
             "RankKitDatabaseStack",
             "RankKitComputeStack",

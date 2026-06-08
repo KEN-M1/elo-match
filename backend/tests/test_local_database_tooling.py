@@ -38,6 +38,10 @@ class LocalDatabaseToolingTests(unittest.TestCase):
         )
         self.assertEqual("pnpm --filter @rankkit/web build", scripts["build:web"])
         self.assertEqual("pnpm --filter @rankkit/web start", scripts["start:web"])
+        self.assertEqual(
+            "powershell -ExecutionPolicy Bypass -File scripts/publish-api-image.ps1",
+            scripts["deploy:api-image"],
+        )
 
         web_package_json = json.loads((REPO_ROOT / "apps" / "web" / "package.json").read_text(encoding="utf-8"))
         self.assertEqual("next build", web_package_json["scripts"]["build"])
@@ -93,6 +97,23 @@ class LocalDatabaseToolingTests(unittest.TestCase):
 
         for expected in [".venv", "__pycache__", "data", ".env", "tests"]:
             self.assertIn(expected, dockerignore)
+
+    def test_publish_api_image_script_builds_tags_and_pushes_ecr_image(self) -> None:
+        script = (REPO_ROOT / "scripts" / "publish-api-image.ps1").read_text(encoding="utf-8")
+
+        for expected in [
+            "param(",
+            "[Parameter(Mandatory=$true)]",
+            "$RepositoryUri",
+            "$ImageTag",
+            "aws ecr get-login-password",
+            "docker login --username AWS --password-stdin",
+            "docker build --progress=plain -t",
+            "docker tag",
+            "docker push",
+            "if ($LASTEXITCODE -ne 0)",
+        ]:
+            self.assertIn(expected, script)
 
     def test_ci_workflow_verifies_app_build_and_postgres_smoke(self) -> None:
         workflow = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")

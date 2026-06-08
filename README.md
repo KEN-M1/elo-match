@@ -150,6 +150,14 @@ Build the backend image from the repository root:
 docker build -t rankkit-api ./backend
 ```
 
+Publish the image to the ECR repository output by `RankKitComputeStack`:
+
+```powershell
+pnpm run deploy:api-image -- `
+  -RepositoryUri 123456789012.dkr.ecr.us-east-1.amazonaws.com/rankkit-api `
+  -ImageTag main
+```
+
 Run the container with production environment variables and a reachable Postgres `DATABASE_URL`.
 Run Alembic migrations before rolling out a new API image.
 

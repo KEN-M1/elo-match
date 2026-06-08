@@ -8,6 +8,7 @@
     "dev:backend": "powershell -ExecutionPolicy Bypass -File scripts/dev-backend.ps1",
     "dev:web": "powershell -ExecutionPolicy Bypass -File scripts/dev-web.ps1",
     "start:backend": "powershell -ExecutionPolicy Bypass -File scripts/start-backend.ps1",
+    "deploy:api-image": "powershell -ExecutionPolicy Bypass -File scripts/publish-api-image.ps1",
     "build:web": "pnpm --filter @rankkit/web build",
     "start:web": "pnpm --filter @rankkit/web start",
     "db:migrate": "powershell -ExecutionPolicy Bypass -File scripts/migrate-db.ps1",

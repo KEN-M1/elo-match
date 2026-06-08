@@ -161,6 +161,27 @@ pnpm run deploy:api-image -- `
 Run the container with production environment variables and a reachable Postgres `DATABASE_URL`.
 Run Alembic migrations before rolling out a new API image.
 
+## Web Container Image
+
+The Next.js web app builds with standalone output so the production image can run without the full
+workspace source tree.
+
+Build the web image from the repository root:
+
+```powershell
+docker build -f apps/web/Dockerfile -t rankkit-web .
+```
+
+Run the image with the production API URL and shared auth secret:
+
+```powershell
+docker run --rm -p 3000:3000 `
+  -e NEXT_PUBLIC_API_URL=https://your-api.example `
+  -e NEXTAUTH_URL=https://your-web-app.example `
+  -e NEXTAUTH_SECRET=replace-with-the-same-32-character-or-longer-secret-used-by-backend `
+  rankkit-web
+```
+
 ## AWS CDK Infrastructure
 
 The `infra/` folder contains the CDK app entrypoint, `RankKitNetworkStack`, `RankKitDatabaseStack`,
@@ -212,9 +233,10 @@ GitHub Actions runs `.github/workflows/ci.yml` on pull requests and pushes to `m
 
 The Windows verification job installs the backend and web dependencies, runs `pnpm test`, builds
 the production web app, and runs the Playwright browser smoke test. The backend image job builds the
-backend Docker image and smoke-tests its `/health` endpoint. The CDK synth job installs infra
-dependencies and runs `cdk synth`. The Postgres smoke job applies Alembic migrations against a fresh
-PostgreSQL service and runs the SQLAlchemy adapter smoke path.
+backend Docker image and smoke-tests its `/health` endpoint. The web image job builds the web
+Docker image and smoke-tests `/`. The CDK synth job installs infra dependencies and runs `cdk
+synth`. The Postgres smoke job applies Alembic migrations against a fresh PostgreSQL service and
+runs the SQLAlchemy adapter smoke path.
 
 Start a local Postgres container:
 

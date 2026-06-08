@@ -102,6 +102,31 @@ class LocalDatabaseToolingTests(unittest.TestCase):
         for expected in [".venv", "__pycache__", "data", ".env", "tests"]:
             self.assertIn(expected, dockerignore)
 
+    def test_web_dockerfile_defines_production_next_image(self) -> None:
+        dockerfile = (REPO_ROOT / "apps" / "web" / "Dockerfile").read_text(encoding="utf-8")
+        dockerignore = (REPO_ROOT / ".dockerignore").read_text(encoding="utf-8")
+        next_config = (REPO_ROOT / "apps" / "web" / "next.config.mjs").read_text(encoding="utf-8")
+
+        for expected in [
+            "FROM node:22-alpine AS deps",
+            "corepack enable",
+            "pnpm install --frozen-lockfile --filter @rankkit/web...",
+            "FROM node:22-alpine AS builder",
+            "pnpm --filter @rankkit/web build",
+            "FROM node:22-alpine AS runner",
+            "NEXT_TELEMETRY_DISABLED=1",
+            "COPY --from=builder --chown=nextjs:nextjs /app/apps/web/.next/standalone ./",
+            "COPY --from=builder --chown=nextjs:nextjs /app/apps/web/.next/static ./apps/web/.next/static",
+            "EXPOSE 3000",
+            'CMD ["node", "apps/web/server.js"]',
+        ]:
+            self.assertIn(expected, dockerfile)
+
+        for expected in ["node_modules", "apps/web/.next", "backend/.venv", "infra/cdk.out"]:
+            self.assertIn(expected, dockerignore)
+
+        self.assertIn('output: "standalone"', next_config)
+
     def test_publish_api_image_script_builds_tags_and_pushes_ecr_image(self) -> None:
         script = (REPO_ROOT / "scripts" / "publish-api-image.ps1").read_text(encoding="utf-8")
 
@@ -162,6 +187,11 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "curl --fail http://127.0.0.1:8002/health",
             "python -m alembic upgrade head",
             "python -m app.db.smoke",
+            "Web image",
+            "docker build --progress=plain -f apps/web/Dockerfile -t rankkit-web .",
+            "docker run -d --name rankkit-web-smoke",
+            "NEXT_PUBLIC_API_URL=http://localhost:8002",
+            "curl --fail http://127.0.0.1:3001",
         ]:
             self.assertIn(expected, workflow)
 

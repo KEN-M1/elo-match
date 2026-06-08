@@ -1,0 +1,14 @@
+.git
+.github
+node_modules
+**/node_modules
+apps/web/.next
+apps/web/.env.local
+backend/.venv
+backend/data
+backend/.pytest_cache
+infra/cdk.out
+test-results
+playwright-report
+*.tsbuildinfo
+*.pyc

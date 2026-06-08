@@ -96,6 +96,42 @@ jobs:
         if: always()
         run: docker rm -f rankkit-api-smoke || true
 
+  web-image:
+    name: Web image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build web image
+        run: docker build --progress=plain -f apps/web/Dockerfile -t rankkit-web .
+
+      - name: Run web image
+        run: |
+          docker run -d --name rankkit-web-smoke \
+            -p 3001:3000 \
+            -e NEXTAUTH_SECRET=ci-production-secret-with-at-least-32-chars \
+            -e NEXTAUTH_URL=http://localhost:3001 \
+            -e NEXT_PUBLIC_API_URL=http://localhost:8002 \
+            -e AUTH_REQUIRED=false \
+            rankkit-web
+
+          for attempt in $(seq 1 30); do
+            if curl --fail http://127.0.0.1:3001; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          docker logs rankkit-web-smoke
+          exit 1
+        shell: bash
+
+      - name: Stop web image
+        if: always()
+        run: docker rm -f rankkit-web-smoke || true
+
   cdk-synth:
     name: CDK synth
     runs-on: ubuntu-latest

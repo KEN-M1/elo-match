@@ -204,7 +204,13 @@ NAT gateway, and security groups for the ALB, ECS tasks, RDS PostgreSQL, and Red
 database stack creates a private PostgreSQL 16 RDS instance with generated Secrets Manager
 credentials, seven-day backups, deletion protection, and retained storage by default. The compute
 stack creates backend and web ECR repositories, the ECS cluster, API and web task definitions,
-Fargate services, and internet-facing application load balancers with health checks.
+Fargate services, and internet-facing application load balancers with HTTPS listeners, HTTP
+redirects, and health checks.
+
+Before deploying the compute stack for production, create or import ACM certificates for the API
+and web domains in the same AWS region as the ALBs, then point DNS aliases at the stack outputs
+after deployment. The web app should call the API through its HTTPS domain to avoid browser mixed
+content failures.
 
 From `infra/`, install CDK dependencies and synthesize the stack:
 
@@ -219,9 +225,12 @@ Deploy-time parameters keep environment-specific values out of source:
 - `AllowedOrigins`: comma-separated web origins allowed to call the API.
 - `ApiImageTag`: ECR image tag to run for the API service.
 - `ApiDesiredCount`: number of API tasks to run. Use `0` for the first compute deploy before an image exists.
+- `ApiCertificateArn`: ACM certificate ARN for the public API load balancer.
+- `ApiPublicUrl`: public HTTPS API origin used by the web app.
 - `WebImageTag`: ECR image tag to run for the web service.
 - `WebDesiredCount`: number of web tasks to run. Use `0` for the first compute deploy before an image exists.
 - `WebAppUrl`: public web origin used by NextAuth.
+- `WebCertificateArn`: ACM certificate ARN for the public web load balancer.
 - `AuthRequired`: whether the web app requires Google auth for protected routes.
 - `GoogleClientId`: Google OAuth client ID for the web app.
 - `GoogleClientSecretArn`: Secrets Manager ARN containing the Google OAuth client secret.
@@ -237,9 +246,12 @@ pnpm run deploy:api-infra -- `
   -AllowedOrigins https://your-web-app.example `
   -ApiImageTag main `
   -ApiDesiredCount 0 `
+  -ApiCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/api-certificate-id `
+  -ApiPublicUrl https://api.your-web-app.example `
   -WebImageTag main `
   -WebDesiredCount 0 `
   -WebAppUrl https://your-web-app.example `
+  -WebCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/web-certificate-id `
   -AuthRequired true
 ```
 
@@ -253,9 +265,12 @@ pnpm run deploy:api-infra -- `
   -AllowedOrigins https://your-web-app.example `
   -ApiImageTag main `
   -ApiDesiredCount 1 `
+  -ApiCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/api-certificate-id `
+  -ApiPublicUrl https://api.your-web-app.example `
   -WebImageTag main `
   -WebDesiredCount 1 `
   -WebAppUrl https://your-web-app.example `
+  -WebCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/web-certificate-id `
   -AuthRequired true
 ```
 

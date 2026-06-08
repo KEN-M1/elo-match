@@ -1,3 +1,4 @@
+from aws_cdk import aws_certificatemanager as acm
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_ecr as ecr
 from aws_cdk import aws_ecs as ecs
@@ -111,6 +112,24 @@ class ComputeStack(cdk.Stack):
             max_value=4,
             description="Number of API tasks to run. Use 0 for first deploy before an image is pushed.",
         )
+        api_certificate_arn = cdk.CfnParameter(
+            self,
+            "ApiCertificateArn",
+            type="String",
+            description="ACM certificate ARN for the public API load balancer.",
+        )
+        api_certificate = acm.Certificate.from_certificate_arn(
+            self,
+            "ApiCertificate",
+            api_certificate_arn.value_as_string,
+        )
+        api_public_url = cdk.CfnParameter(
+            self,
+            "ApiPublicUrl",
+            type="String",
+            default="https://api.replace-me.example",
+            description="Public HTTPS API origin used by the web app.",
+        )
         web_image_tag = cdk.CfnParameter(
             self,
             "WebImageTag",
@@ -133,6 +152,17 @@ class ComputeStack(cdk.Stack):
             type="String",
             default="https://replace-me.example",
             description="Public web origin used by NextAuth.",
+        )
+        web_certificate_arn = cdk.CfnParameter(
+            self,
+            "WebCertificateArn",
+            type="String",
+            description="ACM certificate ARN for the public web load balancer.",
+        )
+        web_certificate = acm.Certificate.from_certificate_arn(
+            self,
+            "WebCertificate",
+            web_certificate_arn.value_as_string,
         )
         auth_required = cdk.CfnParameter(
             self,
@@ -229,8 +259,19 @@ class ComputeStack(cdk.Stack):
             "HttpListener",
             port=80,
             open=False,
+            default_action=elbv2.ListenerAction.redirect(
+                protocol="HTTPS",
+                port="443",
+                permanent=True,
+            ),
         )
-        self.http_listener.add_targets(
+        self.https_listener = self.load_balancer.add_listener(
+            "HttpsListener",
+            port=443,
+            certificates=[api_certificate],
+            open=False,
+        )
+        self.https_listener.add_targets(
             "ApiTargets",
             port=8002,
             protocol=elbv2.ApplicationProtocol.HTTP,
@@ -274,10 +315,7 @@ class ComputeStack(cdk.Stack):
             environment={
                 "AUTH_REQUIRED": auth_required.value_as_string,
                 "GOOGLE_CLIENT_ID": google_client_id.value_as_string,
-                "NEXT_PUBLIC_API_URL": cdk.Fn.join(
-                    "",
-                    ["http://", self.load_balancer.load_balancer_dns_name],
-                ),
+                "NEXT_PUBLIC_API_URL": api_public_url.value_as_string,
                 "NEXTAUTH_URL": web_app_url.value_as_string,
             },
             secrets={
@@ -318,8 +356,19 @@ class ComputeStack(cdk.Stack):
             "WebHttpListener",
             port=80,
             open=False,
+            default_action=elbv2.ListenerAction.redirect(
+                protocol="HTTPS",
+                port="443",
+                permanent=True,
+            ),
         )
-        self.web_http_listener.add_targets(
+        self.web_https_listener = self.web_load_balancer.add_listener(
+            "WebHttpsListener",
+            port=443,
+            certificates=[web_certificate],
+            open=False,
+        )
+        self.web_https_listener.add_targets(
             "WebTargets",
             port=3000,
             protocol=elbv2.ApplicationProtocol.HTTP,

@@ -15,11 +15,19 @@ param(
 
   [int]$ApiDesiredCount = 1,
 
+  [Parameter(Mandatory=$true)]
+  [string]$ApiCertificateArn,
+
+  [string]$ApiPublicUrl = "https://api.replace-me.example",
+
   [string]$WebImageTag = "main",
 
   [int]$WebDesiredCount = 1,
 
   [string]$WebAppUrl = "https://replace-me.example",
+
+  [Parameter(Mandatory=$true)]
+  [string]$WebCertificateArn,
 
   [string]$AuthRequired = "true"
 )
@@ -38,9 +46,12 @@ try {
     --parameters "RankKitComputeStack:AllowedOrigins=$AllowedOrigins" `
     --parameters "RankKitComputeStack:ApiImageTag=$ApiImageTag" `
     --parameters "RankKitComputeStack:ApiDesiredCount=$ApiDesiredCount" `
+    --parameters "RankKitComputeStack:ApiCertificateArn=$ApiCertificateArn" `
+    --parameters "RankKitComputeStack:ApiPublicUrl=$ApiPublicUrl" `
     --parameters "RankKitComputeStack:WebImageTag=$WebImageTag" `
     --parameters "RankKitComputeStack:WebDesiredCount=$WebDesiredCount" `
     --parameters "RankKitComputeStack:WebAppUrl=$WebAppUrl" `
+    --parameters "RankKitComputeStack:WebCertificateArn=$WebCertificateArn" `
     --parameters "RankKitComputeStack:AuthRequired=$AuthRequired" `
     --require-approval never
   if ($LASTEXITCODE -ne 0) {

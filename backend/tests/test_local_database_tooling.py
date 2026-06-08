@@ -42,6 +42,10 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "powershell -ExecutionPolicy Bypass -File scripts/publish-api-image.ps1",
             scripts["deploy:api-image"],
         )
+        self.assertEqual(
+            "powershell -ExecutionPolicy Bypass -File scripts/deploy-api-infra.ps1",
+            scripts["deploy:api-infra"],
+        )
 
         web_package_json = json.loads((REPO_ROOT / "apps" / "web" / "package.json").read_text(encoding="utf-8"))
         self.assertEqual("next build", web_package_json["scripts"]["build"])
@@ -111,6 +115,27 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "docker build --progress=plain -t",
             "docker tag",
             "docker push",
+            "if ($LASTEXITCODE -ne 0)",
+        ]:
+            self.assertIn(expected, script)
+
+    def test_deploy_api_infra_script_passes_cdk_parameters(self) -> None:
+        script = (REPO_ROOT / "scripts" / "deploy-api-infra.ps1").read_text(encoding="utf-8")
+
+        for expected in [
+            "param(",
+            "[Parameter(Mandatory=$true)]",
+            "$JwtSecretArn",
+            "$AllowedOrigins",
+            "$ApiImageTag",
+            "$ApiDesiredCount",
+            "Push-Location $infraRoot",
+            "npx.cmd aws-cdk@2.173.4 deploy RankKitComputeStack",
+            '--parameters "RankKitComputeStack:JwtSecretArn=$JwtSecretArn"',
+            '--parameters "RankKitComputeStack:AllowedOrigins=$AllowedOrigins"',
+            '--parameters "RankKitComputeStack:ApiImageTag=$ApiImageTag"',
+            '--parameters "RankKitComputeStack:ApiDesiredCount=$ApiDesiredCount"',
+            "--require-approval never",
             "if ($LASTEXITCODE -ne 0)",
         ]:
             self.assertIn(expected, script)

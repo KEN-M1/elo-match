@@ -189,21 +189,21 @@ Bootstrap the compute stack with zero API tasks so the ECR repository exists bef
 push:
 
 ```powershell
-cdk deploy RankKitComputeStack `
-  --parameters RankKitComputeStack:JwtSecretArn=arn:aws:secretsmanager:us-east-1:123456789012:secret:rankkit/jwt `
-  --parameters RankKitComputeStack:AllowedOrigins=https://your-web-app.example `
-  --parameters RankKitComputeStack:ApiImageTag=main `
-  --parameters RankKitComputeStack:ApiDesiredCount=0
+pnpm run deploy:api-infra -- `
+  -JwtSecretArn arn:aws:secretsmanager:us-east-1:123456789012:secret:rankkit/jwt `
+  -AllowedOrigins https://your-web-app.example `
+  -ApiImageTag main `
+  -ApiDesiredCount 0
 ```
 
 After publishing the image, redeploy the compute stack with running API tasks:
 
 ```powershell
-cdk deploy RankKitComputeStack `
-  --parameters RankKitComputeStack:JwtSecretArn=arn:aws:secretsmanager:us-east-1:123456789012:secret:rankkit/jwt `
-  --parameters RankKitComputeStack:AllowedOrigins=https://your-web-app.example `
-  --parameters RankKitComputeStack:ApiImageTag=main `
-  --parameters RankKitComputeStack:ApiDesiredCount=1
+pnpm run deploy:api-infra -- `
+  -JwtSecretArn arn:aws:secretsmanager:us-east-1:123456789012:secret:rankkit/jwt `
+  -AllowedOrigins https://your-web-app.example `
+  -ApiImageTag main `
+  -ApiDesiredCount 1
 ```
 
 ## CI Verification

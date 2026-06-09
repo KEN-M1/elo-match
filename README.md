@@ -211,9 +211,10 @@ It also creates CloudWatch alarms for unhealthy API and web load balancer target
 alarm notifications to an operator-owned topic.
 
 Before deploying the compute stack for production, create or import ACM certificates for the API
-and web domains in the same AWS region as the ALBs, then point DNS aliases at the stack outputs
-after deployment. The web app should call the API through its HTTPS domain to avoid browser mixed
-content failures.
+and web domains in the same AWS region as the ALBs. If the domains live in Route53, set
+`HostedZoneId`, `HostedZoneName`, `ApiDomainName`, and `WebDomainName` to create API and web alias
+records. The web app should call the API through its HTTPS domain to avoid browser mixed content
+failures.
 
 For an end-to-end production release sequence with preflight checks, image publishing, migrations,
 service rollout, smoke checks, and rollback notes, use `docs/production-release-runbook.md`.
@@ -241,6 +242,10 @@ Deploy-time parameters keep environment-specific values out of source:
 - `GoogleClientId`: Google OAuth client ID for the web app.
 - `GoogleClientSecretArn`: Secrets Manager ARN containing the Google OAuth client secret.
 - `AlarmNotificationTopicArn`: optional SNS topic ARN for API and web unhealthy-target alarms.
+- `HostedZoneId`: optional Route53 hosted zone ID for API and web alias records.
+- `HostedZoneName`: optional Route53 hosted zone name, such as `your-web-app.example`.
+- `ApiDomainName`: optional API DNS name, such as `api.your-web-app.example`.
+- `WebDomainName`: optional web DNS name, such as `your-web-app.example`.
 
 Bootstrap the compute stack with zero API and web tasks so both ECR repositories exist before the
 first image pushes:
@@ -260,7 +265,11 @@ pnpm run deploy:api-infra -- `
   -WebAppUrl https://your-web-app.example `
   -WebCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/web-certificate-id `
   -AuthRequired true `
-  -AlarmNotificationTopicArn arn:aws:sns:us-east-1:123456789012:rankkit-alerts
+  -AlarmNotificationTopicArn arn:aws:sns:us-east-1:123456789012:rankkit-alerts `
+  -HostedZoneId Z1234567890ABCDE `
+  -HostedZoneName your-web-app.example `
+  -ApiDomainName api.your-web-app.example `
+  -WebDomainName your-web-app.example
 ```
 
 ## Production Database Migrations
@@ -296,7 +305,11 @@ pnpm run deploy:api-infra -- `
   -WebAppUrl https://your-web-app.example `
   -WebCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/web-certificate-id `
   -AuthRequired true `
-  -AlarmNotificationTopicArn arn:aws:sns:us-east-1:123456789012:rankkit-alerts
+  -AlarmNotificationTopicArn arn:aws:sns:us-east-1:123456789012:rankkit-alerts `
+  -HostedZoneId Z1234567890ABCDE `
+  -HostedZoneName your-web-app.example `
+  -ApiDomainName api.your-web-app.example `
+  -WebDomainName your-web-app.example
 ```
 
 ## Production Smoke Check

@@ -41,6 +41,10 @@ class ReadmeDocsTests(unittest.TestCase):
             "GoogleClientId",
             "GoogleClientSecretArn",
             "AlarmNotificationTopicArn",
+            "HostedZoneId",
+            "HostedZoneName",
+            "ApiDomainName",
+            "WebDomainName",
             "ACM certificates",
             "deployment circuit breakers",
             "CloudWatch alarms",
@@ -122,6 +126,8 @@ class ReadmeDocsTests(unittest.TestCase):
             "GitHub Actions",
             "AlarmNotificationTopicArn",
             "arn:aws:sns:us-east-1:123456789012:rankkit-alerts",
+            "hosted zone",
+            "api.your-web-app.example",
         ]:
             self.assertIn(expected, runbook)
 

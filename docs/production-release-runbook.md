@@ -20,6 +20,8 @@ Collect these values before starting:
 - `WebAppUrl`, such as `https://your-web-app.example`.
 - Optional `AlarmNotificationTopicArn`, such as
   `arn:aws:sns:us-east-1:123456789012:rankkit-alerts`, for CloudWatch alarm notifications.
+- Optional Route53 hosted zone inputs for DNS alias records: `HostedZoneId`, `HostedZoneName`,
+  `ApiDomainName`, and `WebDomainName`.
 - `EcsClusterName`, `ApiTaskDefinitionArn`, `MigrationSubnetIds`, and `MigrationSecurityGroupId`
   from the compute stack outputs.
 
@@ -74,11 +76,16 @@ pnpm run deploy:api-infra -- `
   -WebAppUrl https://your-web-app.example `
   -WebCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/web-certificate-id `
   -AuthRequired true `
-  -AlarmNotificationTopicArn arn:aws:sns:us-east-1:123456789012:rankkit-alerts
+  -AlarmNotificationTopicArn arn:aws:sns:us-east-1:123456789012:rankkit-alerts `
+  -HostedZoneId Z1234567890ABCDE `
+  -HostedZoneName your-web-app.example `
+  -ApiDomainName api.your-web-app.example `
+  -WebDomainName your-web-app.example
 ```
 
 Expected output: CloudFormation completes, ECR repository URIs are printed, ECS desired counts
-remain zero, and unhealthy-target alarms publish to the SNS topic when the topic ARN is set.
+remain zero, Route53 alias records point to the load balancers when hosted zone values are set, and
+unhealthy-target alarms publish to the SNS topic when the topic ARN is set.
 
 ## Publish Images
 
@@ -135,7 +142,11 @@ pnpm run deploy:api-infra -- `
   -WebAppUrl https://your-web-app.example `
   -WebCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/web-certificate-id `
   -AuthRequired true `
-  -AlarmNotificationTopicArn arn:aws:sns:us-east-1:123456789012:rankkit-alerts
+  -AlarmNotificationTopicArn arn:aws:sns:us-east-1:123456789012:rankkit-alerts `
+  -HostedZoneId Z1234567890ABCDE `
+  -HostedZoneName your-web-app.example `
+  -ApiDomainName api.your-web-app.example `
+  -WebDomainName your-web-app.example
 ```
 
 Expected output: CloudFormation completes and ECS services stabilize. The deployment circuit breaker
@@ -176,7 +187,11 @@ pnpm run deploy:api-infra -- `
   -WebAppUrl https://your-web-app.example `
   -WebCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/web-certificate-id `
   -AuthRequired true `
-  -AlarmNotificationTopicArn arn:aws:sns:us-east-1:123456789012:rankkit-alerts
+  -AlarmNotificationTopicArn arn:aws:sns:us-east-1:123456789012:rankkit-alerts `
+  -HostedZoneId Z1234567890ABCDE `
+  -HostedZoneName your-web-app.example `
+  -ApiDomainName api.your-web-app.example `
+  -WebDomainName your-web-app.example
 ```
 
 If migrations are not backward compatible, stop and decide on a database recovery plan before
@@ -192,6 +207,8 @@ rolling app code backward. For now, avoid destructive migrations in production r
   logs.
 - If service rollout fails, inspect CloudFormation events, ECS service events, target health, and
   the deployment circuit breaker result.
+- If DNS does not resolve, verify the hosted zone, Route53 alias records, and certificate domain
+  names before changing app settings.
 - If alarm notifications do not arrive, verify `AlarmNotificationTopicArn`, SNS topic policy, and
   the topic subscriptions before assuming the alarm did not fire.
 - If smoke checks fail, capture the failing URL and status, inspect API/web logs, then roll back to

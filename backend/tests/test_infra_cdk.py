@@ -77,6 +77,7 @@ class InfraCdkTests(unittest.TestCase):
 
         for expected in [
             "class ComputeStack(cdk.Stack)",
+            "aws_route53 as route53",
             "aws_cloudwatch as cloudwatch",
             "ecr.Repository",
             'repository_name="rankkit-api"',
@@ -115,6 +116,14 @@ class InfraCdkTests(unittest.TestCase):
             "AuthRequired",
             "GoogleClientId",
             "GoogleClientSecretArn",
+            "HostedZoneId",
+            "HostedZoneName",
+            "ApiDomainName",
+            "WebDomainName",
+            "DnsRecordsConfigured",
+            "route53.CfnRecordSet",
+            "route53.CfnRecordSet.AliasTargetProperty",
+            "load_balancer_canonical_hosted_zone_id",
             "value_as_string",
             "value_as_number",
             "min_value=0",

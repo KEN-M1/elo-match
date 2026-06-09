@@ -31,7 +31,15 @@ param(
 
   [string]$AuthRequired = "true",
 
-  [string]$AlarmNotificationTopicArn = ""
+  [string]$AlarmNotificationTopicArn = "",
+
+  [string]$HostedZoneId = "",
+
+  [string]$HostedZoneName = "",
+
+  [string]$ApiDomainName = "",
+
+  [string]$WebDomainName = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -56,6 +64,10 @@ try {
     --parameters "RankKitComputeStack:WebCertificateArn=$WebCertificateArn" `
     --parameters "RankKitComputeStack:AuthRequired=$AuthRequired" `
     --parameters "RankKitComputeStack:AlarmNotificationTopicArn=$AlarmNotificationTopicArn" `
+    --parameters "RankKitComputeStack:HostedZoneId=$HostedZoneId" `
+    --parameters "RankKitComputeStack:HostedZoneName=$HostedZoneName" `
+    --parameters "RankKitComputeStack:ApiDomainName=$ApiDomainName" `
+    --parameters "RankKitComputeStack:WebDomainName=$WebDomainName" `
     --require-approval never
   if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE

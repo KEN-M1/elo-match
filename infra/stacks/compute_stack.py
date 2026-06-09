@@ -7,6 +7,7 @@ from aws_cdk import aws_iam as iam
 from aws_cdk import aws_elasticloadbalancingv2 as elbv2
 from aws_cdk import aws_logs as aws_logs
 from aws_cdk import aws_rds as rds
+from aws_cdk import aws_route53 as route53
 from aws_cdk import aws_secretsmanager as secretsmanager
 import aws_cdk as cdk
 from constructs import Construct
@@ -188,6 +189,44 @@ class ComputeStack(cdk.Stack):
             "AlarmNotificationTopicConfigured",
             expression=cdk.Fn.condition_not(
                 cdk.Fn.condition_equals(alarm_notification_topic_arn.value_as_string, "")
+            ),
+        )
+        hosted_zone_id = cdk.CfnParameter(
+            self,
+            "HostedZoneId",
+            type="String",
+            default="",
+            description="Optional Route53 hosted zone ID for production DNS records.",
+        )
+        hosted_zone_name = cdk.CfnParameter(
+            self,
+            "HostedZoneName",
+            type="String",
+            default="",
+            description="Optional Route53 hosted zone name used for production DNS documentation.",
+        )
+        api_domain_name = cdk.CfnParameter(
+            self,
+            "ApiDomainName",
+            type="String",
+            default="",
+            description="Optional API domain name for a Route53 alias record.",
+        )
+        web_domain_name = cdk.CfnParameter(
+            self,
+            "WebDomainName",
+            type="String",
+            default="",
+            description="Optional web domain name for a Route53 alias record.",
+        )
+        dns_records_configured = cdk.CfnCondition(
+            self,
+            "DnsRecordsConfigured",
+            expression=cdk.Fn.condition_and(
+                cdk.Fn.condition_not(cdk.Fn.condition_equals(hosted_zone_id.value_as_string, "")),
+                cdk.Fn.condition_not(cdk.Fn.condition_equals(hosted_zone_name.value_as_string, "")),
+                cdk.Fn.condition_not(cdk.Fn.condition_equals(api_domain_name.value_as_string, "")),
+                cdk.Fn.condition_not(cdk.Fn.condition_equals(web_domain_name.value_as_string, "")),
             ),
         )
 
@@ -395,6 +434,32 @@ class ComputeStack(cdk.Stack):
             targets=[self.web_service],
             health_check=elbv2.HealthCheck(path="/", healthy_http_codes="200-399"),
         )
+        api_dns_record = route53.CfnRecordSet(
+            self,
+            "ApiDnsRecord",
+            hosted_zone_id=hosted_zone_id.value_as_string,
+            name=api_domain_name.value_as_string,
+            type="A",
+            alias_target=route53.CfnRecordSet.AliasTargetProperty(
+                dns_name=self.load_balancer.load_balancer_dns_name,
+                hosted_zone_id=self.load_balancer.load_balancer_canonical_hosted_zone_id,
+                evaluate_target_health=True,
+            ),
+        )
+        api_dns_record.cfn_options.condition = dns_records_configured
+        web_dns_record = route53.CfnRecordSet(
+            self,
+            "WebDnsRecord",
+            hosted_zone_id=hosted_zone_id.value_as_string,
+            name=web_domain_name.value_as_string,
+            type="A",
+            alias_target=route53.CfnRecordSet.AliasTargetProperty(
+                dns_name=self.web_load_balancer.load_balancer_dns_name,
+                hosted_zone_id=self.web_load_balancer.load_balancer_canonical_hosted_zone_id,
+                evaluate_target_health=True,
+            ),
+        )
+        web_dns_record.cfn_options.condition = dns_records_configured
 
         self.api_unhealthy_hosts_alarm = cloudwatch.Alarm(
             self,
@@ -442,6 +507,9 @@ class ComputeStack(cdk.Stack):
         cdk.CfnOutput(self, "WebServiceName", value=self.web_service.service_name)
         cdk.CfnOutput(self, "LoadBalancerDnsName", value=self.load_balancer.load_balancer_dns_name)
         cdk.CfnOutput(self, "WebLoadBalancerDnsName", value=self.web_load_balancer.load_balancer_dns_name)
+        cdk.CfnOutput(self, "ConfiguredHostedZoneName", value=hosted_zone_name.value_as_string)
+        cdk.CfnOutput(self, "ConfiguredApiDomainName", value=api_domain_name.value_as_string)
+        cdk.CfnOutput(self, "ConfiguredWebDomainName", value=web_domain_name.value_as_string)
         cdk.CfnOutput(self, "ApiUnhealthyHostsAlarmName", value=self.api_unhealthy_hosts_alarm.alarm_name)
         cdk.CfnOutput(self, "WebUnhealthyHostsAlarmName", value=self.web_unhealthy_hosts_alarm.alarm_name)
         cdk.CfnOutput(

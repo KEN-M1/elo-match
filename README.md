@@ -206,8 +206,9 @@ credentials, seven-day backups, deletion protection, and retained storage by def
 stack creates backend and web ECR repositories, the ECS cluster, API and web task definitions,
 Fargate services, and internet-facing application load balancers with HTTPS listeners, HTTP
 redirects, health checks, and deployment circuit breakers that roll back failed ECS deployments.
-It also creates CloudWatch alarms for unhealthy API and web load balancer targets; use the alarm
-name outputs as the starting point for production notification wiring.
+It also creates CloudWatch alarms for unhealthy API and web load balancer targets. Set
+`AlarmNotificationTopicArn` to an SNS topic ARN when deploying the compute stack to publish those
+alarm notifications to an operator-owned topic.
 
 Before deploying the compute stack for production, create or import ACM certificates for the API
 and web domains in the same AWS region as the ALBs, then point DNS aliases at the stack outputs
@@ -239,6 +240,7 @@ Deploy-time parameters keep environment-specific values out of source:
 - `AuthRequired`: whether the web app requires Google auth for protected routes.
 - `GoogleClientId`: Google OAuth client ID for the web app.
 - `GoogleClientSecretArn`: Secrets Manager ARN containing the Google OAuth client secret.
+- `AlarmNotificationTopicArn`: optional SNS topic ARN for API and web unhealthy-target alarms.
 
 Bootstrap the compute stack with zero API and web tasks so both ECR repositories exist before the
 first image pushes:
@@ -257,7 +259,8 @@ pnpm run deploy:api-infra -- `
   -WebDesiredCount 0 `
   -WebAppUrl https://your-web-app.example `
   -WebCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/web-certificate-id `
-  -AuthRequired true
+  -AuthRequired true `
+  -AlarmNotificationTopicArn arn:aws:sns:us-east-1:123456789012:rankkit-alerts
 ```
 
 ## Production Database Migrations
@@ -292,7 +295,8 @@ pnpm run deploy:api-infra -- `
   -WebDesiredCount 1 `
   -WebAppUrl https://your-web-app.example `
   -WebCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/web-certificate-id `
-  -AuthRequired true
+  -AuthRequired true `
+  -AlarmNotificationTopicArn arn:aws:sns:us-east-1:123456789012:rankkit-alerts
 ```
 
 ## Production Smoke Check

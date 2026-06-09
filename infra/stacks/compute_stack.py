@@ -176,6 +176,20 @@ class ComputeStack(cdk.Stack):
             allowed_values=["true", "false"],
             description="Whether the web app should require Google auth for protected routes.",
         )
+        alarm_notification_topic_arn = cdk.CfnParameter(
+            self,
+            "AlarmNotificationTopicArn",
+            type="String",
+            default="",
+            description="Optional SNS topic ARN that receives CloudWatch alarm notifications.",
+        )
+        alarm_notification_topic_configured = cdk.CfnCondition(
+            self,
+            "AlarmNotificationTopicConfigured",
+            expression=cdk.Fn.condition_not(
+                cdk.Fn.condition_equals(alarm_notification_topic_arn.value_as_string, "")
+            ),
+        )
 
         self.task_definition = ecs.FargateTaskDefinition(
             self,
@@ -408,6 +422,16 @@ class ComputeStack(cdk.Stack):
             comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
             treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING,
         )
+        for alarm in [self.api_unhealthy_hosts_alarm, self.web_unhealthy_hosts_alarm]:
+            cfn_alarm = alarm.node.default_child
+            cfn_alarm.add_property_override(
+                "AlarmActions",
+                cdk.Fn.condition_if(
+                    alarm_notification_topic_configured.logical_id,
+                    [alarm_notification_topic_arn.value_as_string],
+                    cdk.Aws.NO_VALUE,
+                ),
+            )
 
         cdk.CfnOutput(self, "ApiRepositoryUri", value=self.api_repository.repository_uri)
         cdk.CfnOutput(self, "WebRepositoryUri", value=self.web_repository.repository_uri)

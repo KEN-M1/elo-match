@@ -40,6 +40,7 @@ class ReadmeDocsTests(unittest.TestCase):
             "WebCertificateArn",
             "GoogleClientId",
             "GoogleClientSecretArn",
+            "AlarmNotificationTopicArn",
             "ACM certificates",
             "deployment circuit breakers",
             "CloudWatch alarms",
@@ -119,6 +120,8 @@ class ReadmeDocsTests(unittest.TestCase):
             "deployment circuit breaker",
             "## Failure Handling",
             "GitHub Actions",
+            "AlarmNotificationTopicArn",
+            "arn:aws:sns:us-east-1:123456789012:rankkit-alerts",
         ]:
             self.assertIn(expected, runbook)
 

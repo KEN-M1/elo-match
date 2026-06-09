@@ -29,7 +29,9 @@ param(
   [Parameter(Mandatory=$true)]
   [string]$WebCertificateArn,
 
-  [string]$AuthRequired = "true"
+  [string]$AuthRequired = "true",
+
+  [string]$AlarmNotificationTopicArn = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -53,6 +55,7 @@ try {
     --parameters "RankKitComputeStack:WebAppUrl=$WebAppUrl" `
     --parameters "RankKitComputeStack:WebCertificateArn=$WebCertificateArn" `
     --parameters "RankKitComputeStack:AuthRequired=$AuthRequired" `
+    --parameters "RankKitComputeStack:AlarmNotificationTopicArn=$AlarmNotificationTopicArn" `
     --require-approval never
   if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE

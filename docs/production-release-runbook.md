@@ -18,6 +18,8 @@ Collect these values before starting:
 - `ApiCertificateArn` and `WebCertificateArn` in the same region as the load balancers.
 - `ApiPublicUrl`, such as `https://api.your-web-app.example`.
 - `WebAppUrl`, such as `https://your-web-app.example`.
+- Optional `AlarmNotificationTopicArn`, such as
+  `arn:aws:sns:us-east-1:123456789012:rankkit-alerts`, for CloudWatch alarm notifications.
 - `EcsClusterName`, `ApiTaskDefinitionArn`, `MigrationSubnetIds`, and `MigrationSecurityGroupId`
   from the compute stack outputs.
 
@@ -71,11 +73,12 @@ pnpm run deploy:api-infra -- `
   -WebDesiredCount 0 `
   -WebAppUrl https://your-web-app.example `
   -WebCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/web-certificate-id `
-  -AuthRequired true
+  -AuthRequired true `
+  -AlarmNotificationTopicArn arn:aws:sns:us-east-1:123456789012:rankkit-alerts
 ```
 
-Expected output: CloudFormation completes, ECR repository URIs are printed, and ECS desired counts
-remain zero.
+Expected output: CloudFormation completes, ECR repository URIs are printed, ECS desired counts
+remain zero, and unhealthy-target alarms publish to the SNS topic when the topic ARN is set.
 
 ## Publish Images
 
@@ -131,7 +134,8 @@ pnpm run deploy:api-infra -- `
   -WebDesiredCount 1 `
   -WebAppUrl https://your-web-app.example `
   -WebCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/web-certificate-id `
-  -AuthRequired true
+  -AuthRequired true `
+  -AlarmNotificationTopicArn arn:aws:sns:us-east-1:123456789012:rankkit-alerts
 ```
 
 Expected output: CloudFormation completes and ECS services stabilize. The deployment circuit breaker
@@ -171,7 +175,8 @@ pnpm run deploy:api-infra -- `
   -WebDesiredCount 1 `
   -WebAppUrl https://your-web-app.example `
   -WebCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/web-certificate-id `
-  -AuthRequired true
+  -AuthRequired true `
+  -AlarmNotificationTopicArn arn:aws:sns:us-east-1:123456789012:rankkit-alerts
 ```
 
 If migrations are not backward compatible, stop and decide on a database recovery plan before
@@ -187,5 +192,7 @@ rolling app code backward. For now, avoid destructive migrations in production r
   logs.
 - If service rollout fails, inspect CloudFormation events, ECS service events, target health, and
   the deployment circuit breaker result.
+- If alarm notifications do not arrive, verify `AlarmNotificationTopicArn`, SNS topic policy, and
+  the topic subscriptions before assuming the alarm did not fire.
 - If smoke checks fail, capture the failing URL and status, inspect API/web logs, then roll back to
   the previous image tag when user traffic is at risk.

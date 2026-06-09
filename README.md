@@ -292,6 +292,16 @@ pnpm run deploy:api-infra -- `
   -AuthRequired true
 ```
 
+## Production Smoke Check
+
+After the running services stabilize, verify the deployed API and web entry points:
+
+```powershell
+pnpm run deploy:smoke -- `
+  -ApiUrl https://api.your-web-app.example `
+  -WebUrl https://your-web-app.example
+```
+
 ## CI Verification
 
 GitHub Actions runs `.github/workflows/ci.yml` on pull requests and pushes to `main`.

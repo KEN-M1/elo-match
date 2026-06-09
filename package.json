@@ -12,6 +12,7 @@
     "deploy:web-image": "powershell -ExecutionPolicy Bypass -File scripts/publish-web-image.ps1",
     "deploy:api-infra": "powershell -ExecutionPolicy Bypass -File scripts/deploy-api-infra.ps1",
     "deploy:api-migrations": "powershell -ExecutionPolicy Bypass -File scripts/run-api-migrations.ps1",
+    "deploy:smoke": "powershell -ExecutionPolicy Bypass -File scripts/smoke-production.ps1",
     "build:web": "pnpm --filter @rankkit/web build",
     "start:web": "pnpm --filter @rankkit/web start",
     "db:migrate": "powershell -ExecutionPolicy Bypass -File scripts/migrate-db.ps1",

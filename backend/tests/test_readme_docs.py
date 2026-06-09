@@ -50,6 +50,8 @@ class ReadmeDocsTests(unittest.TestCase):
             "pnpm run deploy:api-infra",
             "## Production Database Migrations",
             "pnpm run deploy:api-migrations",
+            "## Production Smoke Check",
+            "pnpm run deploy:smoke",
             "MigrationSubnetIds",
             "MigrationSecurityGroupId",
             "## CI Verification",

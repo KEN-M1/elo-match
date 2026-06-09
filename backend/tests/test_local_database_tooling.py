@@ -54,6 +54,10 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "powershell -ExecutionPolicy Bypass -File scripts/run-api-migrations.ps1",
             scripts["deploy:api-migrations"],
         )
+        self.assertEqual(
+            "powershell -ExecutionPolicy Bypass -File scripts/smoke-production.ps1",
+            scripts["deploy:smoke"],
+        )
 
         web_package_json = json.loads((REPO_ROOT / "apps" / "web" / "package.json").read_text(encoding="utf-8"))
         self.assertEqual("next build", web_package_json["scripts"]["build"])
@@ -233,6 +237,26 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "aws ecs wait tasks-stopped",
             '"ecs", "describe-tasks"',
             "exit $exitCode",
+        ]:
+            self.assertIn(expected, script)
+
+    def test_smoke_production_script_checks_api_and_web_urls(self) -> None:
+        script = (REPO_ROOT / "scripts" / "smoke-production.ps1").read_text(encoding="utf-8")
+
+        for expected in [
+            "param(",
+            "[Parameter(Mandatory=$true)]",
+            "$ApiUrl",
+            "$WebUrl",
+            "$MaxAttempts = 30",
+            "$DelaySeconds = 5",
+            "Invoke-WebRequest",
+            "$ApiUrl.TrimEnd('/') + \"/health\"",
+            "StatusCode",
+            "Write-Host",
+            "Start-Sleep",
+            "throw",
+            "Production smoke passed",
         ]:
             self.assertIn(expected, script)
 

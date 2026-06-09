@@ -87,6 +87,41 @@ class ReadmeDocsTests(unittest.TestCase):
         ]:
             self.assertIn(expected, env_example)
 
+    def test_production_release_runbook_documents_repeatable_deploy_flow(self) -> None:
+        readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+        runbook = (REPO_ROOT / "docs" / "production-release-runbook.md").read_text(encoding="utf-8")
+
+        self.assertIn("docs/production-release-runbook.md", readme)
+
+        for expected in [
+            "# Production Release Runbook",
+            "## Required Inputs",
+            "## Preflight Verification",
+            "pnpm test",
+            "pnpm run build:web",
+            "pnpm run test:e2e",
+            "npx aws-cdk@2.173.4 synth",
+            "## First Environment Bootstrap",
+            "-ApiDesiredCount 0",
+            "-WebDesiredCount 0",
+            "## Publish Images",
+            "pnpm run deploy:api-image",
+            "pnpm run deploy:web-image",
+            "## Run Migrations",
+            "pnpm run deploy:api-migrations",
+            "## Roll Out Services",
+            "-ApiDesiredCount 1",
+            "-WebDesiredCount 1",
+            "## Smoke Check",
+            "pnpm run deploy:smoke",
+            "## Rollback",
+            "previous image tag",
+            "deployment circuit breaker",
+            "## Failure Handling",
+            "GitHub Actions",
+        ]:
+            self.assertIn(expected, runbook)
+
 
 if __name__ == "__main__":
     unittest.main()

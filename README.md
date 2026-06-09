@@ -214,6 +214,9 @@ and web domains in the same AWS region as the ALBs, then point DNS aliases at th
 after deployment. The web app should call the API through its HTTPS domain to avoid browser mixed
 content failures.
 
+For an end-to-end production release sequence with preflight checks, image publishing, migrations,
+service rollout, smoke checks, and rollback notes, use `docs/production-release-runbook.md`.
+
 From `infra/`, install CDK dependencies and synthesize the stack:
 
 ```powershell

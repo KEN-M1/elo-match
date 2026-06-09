@@ -27,13 +27,23 @@ Collect these values before starting:
 
 ## Preflight Verification
 
-Verify the local branch is clean and the release has passed CI. GitHub Actions is the authoritative
-Docker image validation path because the local Windows Docker environment can hang or differ from
-the Linux runner.
+Install and configure AWS CLI v2, Docker Desktop, GitHub CLI, Node, pnpm, and Python before
+attempting a live deploy. Verify the local branch is clean and the release has passed CI. GitHub
+Actions is the authoritative Docker image validation path because local Docker can hang or differ
+from the Linux runner.
 
 ```powershell
 git status --short --branch
 gh run list --branch main --limit 3
+```
+
+Run the production preflight to check AWS CLI identity, AWS region, Docker availability, latest
+GitHub Actions status, and CDK synth:
+
+```powershell
+pnpm run deploy:preflight -- `
+  -ExpectedAwsAccountId 123456789012 `
+  -AWSRegion us-east-1
 ```
 
 Run the same app-level checks locally before cutting a release:
@@ -54,6 +64,8 @@ Pop-Location
 
 Expected output: tests pass, the web build succeeds, Playwright completes, and CDK synth exits
 without errors. CDK notices about supported Node versions are informational unless synth fails.
+The preflight prints `Production preflight passed.` when AWS CLI, Docker, GitHub Actions, and CDK
+are ready for the live release sequence.
 
 ## First Environment Bootstrap
 
@@ -200,6 +212,10 @@ rolling app code backward. For now, avoid destructive migrations in production r
 ## Failure Handling
 
 - If preflight checks fail, fix locally before publishing images.
+- If AWS CLI is missing, install AWS CLI v2, authenticate to the target account, and configure an
+  AWS region before retrying the preflight.
+- If Docker is unavailable, start Docker Desktop or rely on GitHub Actions for image build proof
+  before publishing from a machine with Docker available.
 - If GitHub Actions is red, do not release from `main`.
 - If image publishing fails, keep desired counts unchanged and retry after correcting ECR, Docker,
   or AWS credential issues.

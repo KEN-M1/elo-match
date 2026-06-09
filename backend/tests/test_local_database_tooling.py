@@ -58,6 +58,10 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "powershell -ExecutionPolicy Bypass -File scripts/smoke-production.ps1",
             scripts["deploy:smoke"],
         )
+        self.assertEqual(
+            "powershell -ExecutionPolicy Bypass -File scripts/production-preflight.ps1",
+            scripts["deploy:preflight"],
+        )
 
         web_package_json = json.loads((REPO_ROOT / "apps" / "web" / "package.json").read_text(encoding="utf-8"))
         self.assertEqual("next build", web_package_json["scripts"]["build"])
@@ -267,6 +271,26 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "Start-Sleep",
             "throw",
             "Production smoke passed",
+        ]:
+            self.assertIn(expected, script)
+
+    def test_production_preflight_script_checks_live_deploy_prerequisites(self) -> None:
+        script = (REPO_ROOT / "scripts" / "production-preflight.ps1").read_text(encoding="utf-8")
+
+        for expected in [
+            "param(",
+            "$ExpectedAwsAccountId",
+            "$AWSRegion",
+            "aws sts get-caller-identity",
+            "aws configure get region",
+            "docker version",
+            "gh run list",
+            "npx.cmd aws-cdk@2.173.4 synth",
+            "GitHub Actions",
+            "AWS CLI",
+            "Docker",
+            "Production preflight passed",
+            "if ($LASTEXITCODE -ne 0)",
         ]:
             self.assertIn(expected, script)
 

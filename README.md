@@ -219,6 +219,15 @@ failures.
 For an end-to-end production release sequence with preflight checks, image publishing, migrations,
 service rollout, smoke checks, and rollback notes, use `docs/production-release-runbook.md`.
 
+Before attempting a live AWS deploy, run the production preflight. It verifies AWS CLI identity and
+region, Docker availability, the latest GitHub Actions result, and CDK synthesis:
+
+```powershell
+pnpm run deploy:preflight -- `
+  -ExpectedAwsAccountId 123456789012 `
+  -AWSRegion us-east-1
+```
+
 From `infra/`, install CDK dependencies and synthesize the stack:
 
 ```powershell

@@ -149,6 +149,10 @@ class InfraCdkTests(unittest.TestCase):
             "WebTaskDefinitionArn",
             "WebServiceName",
             "ApiServiceName",
+            "MigrationSubnetIds",
+            "MigrationSecurityGroupId",
+            "vpc.select_subnets",
+            "subnet_ids",
         ]:
             self.assertIn(expected, stack_source)
 

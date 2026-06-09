@@ -50,6 +50,10 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "powershell -ExecutionPolicy Bypass -File scripts/deploy-api-infra.ps1",
             scripts["deploy:api-infra"],
         )
+        self.assertEqual(
+            "powershell -ExecutionPolicy Bypass -File scripts/run-api-migrations.ps1",
+            scripts["deploy:api-migrations"],
+        )
 
         web_package_json = json.loads((REPO_ROOT / "apps" / "web" / "package.json").read_text(encoding="utf-8"))
         self.assertEqual("next build", web_package_json["scripts"]["build"])
@@ -201,6 +205,34 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             '--parameters "RankKitComputeStack:GoogleClientSecretArn=$GoogleClientSecretArn"',
             "--require-approval never",
             "if ($LASTEXITCODE -ne 0)",
+        ]:
+            self.assertIn(expected, script)
+
+    def test_run_api_migrations_script_runs_one_off_ecs_task(self) -> None:
+        script = (REPO_ROOT / "scripts" / "run-api-migrations.ps1").read_text(encoding="utf-8")
+
+        for expected in [
+            "param(",
+            "[Parameter(Mandatory=$true)]",
+            "$ClusterName",
+            "$TaskDefinitionArn",
+            "$SubnetIds",
+            "$SecurityGroupIds",
+            "$ContainerName = \"ApiContainer\"",
+            '"ecs", "run-task"',
+            "--launch-type",
+            "FARGATE",
+            "awsvpcConfiguration",
+            "assignPublicIp",
+            "DISABLED",
+            "python",
+            "-m",
+            "alembic",
+            "upgrade",
+            "head",
+            "aws ecs wait tasks-stopped",
+            '"ecs", "describe-tasks"',
+            "exit $exitCode",
         ]:
             self.assertIn(expected, script)
 

@@ -60,6 +60,9 @@ class ComputeStack(cdk.Stack):
             cluster_name="rankkit-cluster",
             container_insights=True,
         )
+        self.private_subnets = vpc.select_subnets(
+            subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+        )
 
         jwt_secret_arn = cdk.CfnParameter(
             self,
@@ -385,3 +388,9 @@ class ComputeStack(cdk.Stack):
         cdk.CfnOutput(self, "WebServiceName", value=self.web_service.service_name)
         cdk.CfnOutput(self, "LoadBalancerDnsName", value=self.load_balancer.load_balancer_dns_name)
         cdk.CfnOutput(self, "WebLoadBalancerDnsName", value=self.web_load_balancer.load_balancer_dns_name)
+        cdk.CfnOutput(
+            self,
+            "MigrationSubnetIds",
+            value=cdk.Fn.join(",", self.private_subnets.subnet_ids),
+        )
+        cdk.CfnOutput(self, "MigrationSecurityGroupId", value=security_group.security_group_id)

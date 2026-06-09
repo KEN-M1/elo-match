@@ -255,7 +255,23 @@ pnpm run deploy:api-infra -- `
   -AuthRequired true
 ```
 
-After publishing the images, redeploy the compute stack with running API and web tasks:
+## Production Database Migrations
+
+After publishing a new API image and before scaling running services to that image, run Alembic
+migrations as a one-off ECS Fargate task. Use the `EcsClusterName`, `ApiTaskDefinitionArn`,
+`MigrationSubnetIds`, and `MigrationSecurityGroupId` outputs from `RankKitComputeStack`.
+
+```powershell
+pnpm run deploy:api-migrations -- `
+  -ClusterName rankkit-cluster `
+  -TaskDefinitionArn arn:aws:ecs:us-east-1:123456789012:task-definition/RankKitComputeStackApiTaskDefinition... `
+  -SubnetIds subnet-aaa,subnet-bbb `
+  -SecurityGroupIds sg-ecs `
+  -AWSRegion us-east-1
+```
+
+After publishing the images and running migrations, redeploy the compute stack with running API and
+web tasks:
 
 ```powershell
 pnpm run deploy:api-infra -- `

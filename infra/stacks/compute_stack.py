@@ -1,4 +1,5 @@
 from aws_cdk import aws_certificatemanager as acm
+from aws_cdk import aws_cloudwatch as cloudwatch
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_ecr as ecr
 from aws_cdk import aws_ecs as ecs
@@ -275,7 +276,7 @@ class ComputeStack(cdk.Stack):
             certificates=[api_certificate],
             open=False,
         )
-        self.https_listener.add_targets(
+        self.api_target_group = self.https_listener.add_targets(
             "ApiTargets",
             port=8002,
             protocol=elbv2.ApplicationProtocol.HTTP,
@@ -373,12 +374,39 @@ class ComputeStack(cdk.Stack):
             certificates=[web_certificate],
             open=False,
         )
-        self.web_https_listener.add_targets(
+        self.web_target_group = self.web_https_listener.add_targets(
             "WebTargets",
             port=3000,
             protocol=elbv2.ApplicationProtocol.HTTP,
             targets=[self.web_service],
             health_check=elbv2.HealthCheck(path="/", healthy_http_codes="200-399"),
+        )
+
+        self.api_unhealthy_hosts_alarm = cloudwatch.Alarm(
+            self,
+            "ApiUnhealthyHostsAlarm",
+            alarm_name="rankkit-api-unhealthy-hosts",
+            metric=self.api_target_group.metrics.unhealthy_host_count(
+                period=cdk.Duration.minutes(1),
+                statistic="Maximum",
+            ),
+            threshold=1,
+            evaluation_periods=2,
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING,
+        )
+        self.web_unhealthy_hosts_alarm = cloudwatch.Alarm(
+            self,
+            "WebUnhealthyHostsAlarm",
+            alarm_name="rankkit-web-unhealthy-hosts",
+            metric=self.web_target_group.metrics.unhealthy_host_count(
+                period=cdk.Duration.minutes(1),
+                statistic="Maximum",
+            ),
+            threshold=1,
+            evaluation_periods=2,
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING,
         )
 
         cdk.CfnOutput(self, "ApiRepositoryUri", value=self.api_repository.repository_uri)
@@ -390,6 +418,8 @@ class ComputeStack(cdk.Stack):
         cdk.CfnOutput(self, "WebServiceName", value=self.web_service.service_name)
         cdk.CfnOutput(self, "LoadBalancerDnsName", value=self.load_balancer.load_balancer_dns_name)
         cdk.CfnOutput(self, "WebLoadBalancerDnsName", value=self.web_load_balancer.load_balancer_dns_name)
+        cdk.CfnOutput(self, "ApiUnhealthyHostsAlarmName", value=self.api_unhealthy_hosts_alarm.alarm_name)
+        cdk.CfnOutput(self, "WebUnhealthyHostsAlarmName", value=self.web_unhealthy_hosts_alarm.alarm_name)
         cdk.CfnOutput(
             self,
             "MigrationSubnetIds",

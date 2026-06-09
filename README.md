@@ -206,6 +206,8 @@ credentials, seven-day backups, deletion protection, and retained storage by def
 stack creates backend and web ECR repositories, the ECS cluster, API and web task definitions,
 Fargate services, and internet-facing application load balancers with HTTPS listeners, HTTP
 redirects, health checks, and deployment circuit breakers that roll back failed ECS deployments.
+It also creates CloudWatch alarms for unhealthy API and web load balancer targets; use the alarm
+name outputs as the starting point for production notification wiring.
 
 Before deploying the compute stack for production, create or import ACM certificates for the API
 and web domains in the same AWS region as the ALBs, then point DNS aliases at the stack outputs

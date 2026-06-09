@@ -42,6 +42,7 @@ class ReadmeDocsTests(unittest.TestCase):
             "GoogleClientSecretArn",
             "ACM certificates",
             "deployment circuit breakers",
+            "CloudWatch alarms",
             "/api/auth/callback/google",
             "-ApiDesiredCount 0",
             "-WebDesiredCount 0",

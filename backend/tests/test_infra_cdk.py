@@ -77,6 +77,7 @@ class InfraCdkTests(unittest.TestCase):
 
         for expected in [
             "class ComputeStack(cdk.Stack)",
+            "aws_cloudwatch as cloudwatch",
             "ecr.Repository",
             'repository_name="rankkit-api"',
             'repository_name="rankkit-web"',
@@ -145,6 +146,12 @@ class InfraCdkTests(unittest.TestCase):
             "certificates=[api_certificate]",
             "certificates=[web_certificate]",
             "health_check=elbv2.HealthCheck",
+            "cloudwatch.Alarm",
+            "metrics.unhealthy_host_count",
+            "ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD",
+            "TreatMissingData.NOT_BREACHING",
+            "ApiUnhealthyHostsAlarmName",
+            "WebUnhealthyHostsAlarmName",
             "LoadBalancerDnsName",
             "WebLoadBalancerDnsName",
             "WebRepositoryUri",

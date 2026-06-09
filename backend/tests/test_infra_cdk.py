@@ -134,6 +134,8 @@ class InfraCdkTests(unittest.TestCase):
             "elbv2.ApplicationLoadBalancer",
             "internet_facing=True",
             "ecs.FargateService",
+            "circuit_breaker=ecs.DeploymentCircuitBreaker",
+            "rollback=True",
             "desired_count=api_desired_count.value_as_number",
             "desired_count=web_desired_count.value_as_number",
             "assign_public_ip=False",

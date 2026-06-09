@@ -41,6 +41,7 @@ class ReadmeDocsTests(unittest.TestCase):
             "GoogleClientId",
             "GoogleClientSecretArn",
             "ACM certificates",
+            "deployment circuit breakers",
             "/api/auth/callback/google",
             "-ApiDesiredCount 0",
             "-WebDesiredCount 0",

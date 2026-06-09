@@ -205,7 +205,7 @@ database stack creates a private PostgreSQL 16 RDS instance with generated Secre
 credentials, seven-day backups, deletion protection, and retained storage by default. The compute
 stack creates backend and web ECR repositories, the ECS cluster, API and web task definitions,
 Fargate services, and internet-facing application load balancers with HTTPS listeners, HTTP
-redirects, and health checks.
+redirects, health checks, and deployment circuit breakers that roll back failed ECS deployments.
 
 Before deploying the compute stack for production, create or import ACM certificates for the API
 and web domains in the same AWS region as the ALBs, then point DNS aliases at the stack outputs

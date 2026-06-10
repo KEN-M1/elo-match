@@ -14,6 +14,8 @@
     "deploy:api-migrations": "powershell -ExecutionPolicy Bypass -File scripts/run-api-migrations.ps1",
     "deploy:smoke": "powershell -ExecutionPolicy Bypass -File scripts/smoke-production.ps1",
     "deploy:preflight": "powershell -ExecutionPolicy Bypass -File scripts/production-preflight.ps1",
+    "prod:local": "docker compose -f compose.production-local.yaml up --build",
+    "prod:local:down": "docker compose -f compose.production-local.yaml down",
     "build:web": "pnpm --filter @rankkit/web build",
     "start:web": "pnpm --filter @rankkit/web start",
     "db:migrate": "powershell -ExecutionPolicy Bypass -File scripts/migrate-db.ps1",

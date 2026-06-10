@@ -143,6 +143,24 @@ pnpm run build:web
 pnpm run start:web
 ```
 
+## Local Production Compose
+
+When AWS deployment is deferred, run the production containers locally with PostgreSQL and Alembic
+migrations:
+
+```powershell
+pnpm run prod:local
+```
+
+This uses `compose.production-local.yaml` to build the backend image, run `python -m alembic
+upgrade head`, start the FastAPI container with `ENVIRONMENT=production` and
+`STORE_BACKEND=postgres`, and start the Next.js standalone image at `http://localhost:3000`.
+Stop it with:
+
+```powershell
+pnpm run prod:local:down
+```
+
 ## Backend Container Image
 
 The FastAPI backend has a production Dockerfile that installs runtime dependencies only, copies the

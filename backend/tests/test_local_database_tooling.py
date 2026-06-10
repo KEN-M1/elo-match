@@ -62,6 +62,14 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "powershell -ExecutionPolicy Bypass -File scripts/production-preflight.ps1",
             scripts["deploy:preflight"],
         )
+        self.assertEqual(
+            "docker compose -f compose.production-local.yaml up --build",
+            scripts["prod:local"],
+        )
+        self.assertEqual(
+            "docker compose -f compose.production-local.yaml down",
+            scripts["prod:local:down"],
+        )
 
         web_package_json = json.loads((REPO_ROOT / "apps" / "web" / "package.json").read_text(encoding="utf-8"))
         self.assertEqual("next build", web_package_json["scripts"]["build"])
@@ -75,6 +83,39 @@ class LocalDatabaseToolingTests(unittest.TestCase):
         self.assertIn("POSTGRES_USER: rankkit", compose)
         self.assertIn("POSTGRES_PASSWORD: rankkit", compose)
         self.assertIn("5432:5432", compose)
+
+    def test_local_production_compose_runs_postgres_migrations_api_and_web(self) -> None:
+        compose = (REPO_ROOT / "compose.production-local.yaml").read_text(encoding="utf-8")
+
+        for expected in [
+            "rankkit-postgres",
+            "rankkit-migrate",
+            "rankkit-api",
+            "rankkit-web",
+            "postgres:16-alpine",
+            "build:",
+            "context: ./backend",
+            "context: .",
+            "dockerfile: apps/web/Dockerfile",
+            "python -m alembic upgrade head",
+            "ENVIRONMENT: production",
+            "STORE_BACKEND: postgres",
+            "DATABASE_HOST: rankkit-postgres",
+            "DATABASE_NAME: rankkit",
+            "DATABASE_USER: rankkit",
+            "DATABASE_PASSWORD: rankkit",
+            "JWT_SECRET: local-production-nextauth-secret-32chars",
+            "ALLOWED_ORIGINS: http://localhost:3000",
+            "NEXT_PUBLIC_API_URL: http://localhost:8002",
+            "NEXTAUTH_URL: http://localhost:3000",
+            "NEXTAUTH_SECRET: local-production-nextauth-secret-32chars",
+            "AUTH_REQUIRED: false",
+            "8002:8002",
+            "3000:3000",
+            "service_completed_successfully",
+            "service_healthy",
+        ]:
+            self.assertIn(expected, compose)
 
     def test_database_scripts_use_backend_alembic(self) -> None:
         migrate_script = (REPO_ROOT / "scripts" / "migrate-db.ps1").read_text(encoding="utf-8")

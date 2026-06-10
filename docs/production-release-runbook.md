@@ -67,6 +67,27 @@ without errors. CDK notices about supported Node versions are informational unle
 The preflight prints `Production preflight passed.` when AWS CLI, Docker, GitHub Actions, and CDK
 are ready for the live release sequence.
 
+## Local Production Compose
+
+When live AWS deployment is intentionally deferred, use the local production compose path to run the
+same production Dockerfiles against local PostgreSQL:
+
+```powershell
+pnpm run prod:local
+```
+
+`compose.production-local.yaml` starts PostgreSQL, runs Alembic migrations, starts the FastAPI API
+with production runtime validation and the Postgres Store Backend, then starts the Next.js
+standalone web container. Open `http://localhost:3000` for the web app and `http://localhost:8002`
+for the API. Stop the stack with:
+
+```powershell
+pnpm run prod:local:down
+```
+
+This does not deploy AWS resources or publish images to ECR. Use it to validate the local
+production runtime shape while issue `#13` remains deferred.
+
 ## First Environment Bootstrap
 
 Use this only for the first deployment into a new environment, or when the ECR repositories do not

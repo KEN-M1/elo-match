@@ -22,6 +22,28 @@ function Test-CommandAvailable {
   }
 }
 
+function Resolve-CommandPath {
+  param(
+    [Parameter(Mandatory=$true)]
+    [string]$Name,
+
+    [string[]]$FallbackPaths = @()
+  )
+
+  $command = Get-Command $Name -ErrorAction SilentlyContinue
+  if ($command) {
+    return $command.Source
+  }
+
+  foreach ($path in $FallbackPaths) {
+    if (Test-Path -LiteralPath $path) {
+      return $path
+    }
+  }
+
+  return $null
+}
+
 function Invoke-CheckedCommand {
   param(
     [Parameter(Mandatory=$true)]
@@ -40,13 +62,18 @@ function Invoke-CheckedCommand {
 $repoRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")
 $infraRoot = Join-Path $repoRoot "infra"
 
-Test-CommandAvailable -Name "aws" -InstallHint "Install and configure AWS CLI v2."
+$awsCommand = Resolve-CommandPath `
+  -Name "aws" `
+  -FallbackPaths @("C:\Program Files\Amazon\AWSCLIV2\aws.exe")
+if (-not $awsCommand) {
+  throw "AWS CLI is required for production deployment. Install and configure AWS CLI v2."
+}
 Test-CommandAvailable -Name "docker" -InstallHint "Install Docker Desktop and make sure the daemon is running."
 Test-CommandAvailable -Name "gh" -InstallHint "Install GitHub CLI and authenticate with gh auth login."
 Test-CommandAvailable -Name "npx.cmd" -InstallHint "Install Node.js dependencies with pnpm install."
 
 Write-Host "Checking AWS CLI identity..."
-$identityJson = aws sts get-caller-identity
+$identityJson = & $awsCommand sts get-caller-identity
 if ($LASTEXITCODE -ne 0) {
   throw "AWS CLI could not read caller identity. Check credentials and SSO/session state."
 }
@@ -59,7 +86,7 @@ if ($ExpectedAwsAccountId -and $identity.Account -ne $ExpectedAwsAccountId) {
 
 $configuredRegion = $AWSRegion
 if (-not $configuredRegion) {
-  $configuredRegion = aws configure get region
+  $configuredRegion = & $awsCommand configure get region
   if ($LASTEXITCODE -ne 0 -or -not $configuredRegion) {
     throw "AWS region is not configured. Pass -AWSRegion or run aws configure set region <region>."
   }

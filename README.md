@@ -155,6 +155,12 @@ pnpm run prod:local
 This uses `compose.production-local.yaml` to build the backend image, run `python -m alembic
 upgrade head`, start the FastAPI container with `ENVIRONMENT=production` and
 `STORE_BACKEND=postgres`, and start the Next.js standalone image at `http://localhost:3000`.
+Once the stack is healthy, smoke the API and web entry points:
+
+```powershell
+pnpm run prod:local:smoke
+```
+
 Stop it with:
 
 ```powershell

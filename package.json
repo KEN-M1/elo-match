@@ -16,6 +16,7 @@
     "deploy:preflight": "powershell -ExecutionPolicy Bypass -File scripts/production-preflight.ps1",
     "prod:local": "docker compose -f compose.production-local.yaml up --build",
     "prod:local:down": "docker compose -f compose.production-local.yaml down",
+    "prod:local:smoke": "powershell -ExecutionPolicy Bypass -File scripts/smoke-production.ps1 -ApiUrl http://localhost:8002 -WebUrl http://localhost:3000",
     "build:web": "pnpm --filter @rankkit/web build",
     "start:web": "pnpm --filter @rankkit/web start",
     "db:migrate": "powershell -ExecutionPolicy Bypass -File scripts/migrate-db.ps1",

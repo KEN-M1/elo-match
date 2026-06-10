@@ -70,6 +70,10 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "docker compose -f compose.production-local.yaml down",
             scripts["prod:local:down"],
         )
+        self.assertEqual(
+            "powershell -ExecutionPolicy Bypass -File scripts/smoke-production.ps1 -ApiUrl http://localhost:8002 -WebUrl http://localhost:3000",
+            scripts["prod:local:smoke"],
+        )
 
         web_package_json = json.loads((REPO_ROOT / "apps" / "web" / "package.json").read_text(encoding="utf-8"))
         self.assertEqual("next build", web_package_json["scripts"]["build"])

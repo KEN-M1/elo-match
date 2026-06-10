@@ -79,7 +79,13 @@ pnpm run prod:local
 `compose.production-local.yaml` starts PostgreSQL, runs Alembic migrations, starts the FastAPI API
 with production runtime validation and the Postgres Store Backend, then starts the Next.js
 standalone web container. Open `http://localhost:3000` for the web app and `http://localhost:8002`
-for the API. Stop the stack with:
+for the API. Smoke the local production endpoints with:
+
+```powershell
+pnpm run prod:local:smoke
+```
+
+Stop the stack with:
 
 ```powershell
 pnpm run prod:local:down

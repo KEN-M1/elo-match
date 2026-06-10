@@ -105,7 +105,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build web image
-        run: docker build --progress=plain -f apps/web/Dockerfile -t rankkit-web .
+        run: docker build --progress=plain -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_API_URL=http://localhost:8002 -t rankkit-web .
 
       - name: Run web image
         run: |

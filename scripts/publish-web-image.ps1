@@ -2,6 +2,9 @@ param(
   [Parameter(Mandatory=$true)]
   [string]$RepositoryUri,
 
+  [Parameter(Mandatory=$true)]
+  [string]$NextPublicApiUrl,
+
   [string]$ImageTag = "main",
 
   [string]$AWSRegion = ""
@@ -25,7 +28,7 @@ $remoteImage = "$RepositoryUri`:$ImageTag"
 
 Push-Location $repoRoot
 try {
-  & docker build --progress=plain -f apps/web/Dockerfile -t $localImage .
+  & docker build --progress=plain -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_API_URL=$NextPublicApiUrl -t $localImage .
   if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
   }

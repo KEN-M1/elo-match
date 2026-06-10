@@ -53,6 +53,8 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8002
     environment:
       AUTH_REQUIRED: false
       GOOGLE_CLIENT_ID: ""

@@ -197,7 +197,7 @@ workspace source tree.
 Build the web image from the repository root:
 
 ```powershell
-docker build -f apps/web/Dockerfile -t rankkit-web .
+docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_API_URL=https://api.your-web-app.example -t rankkit-web .
 ```
 
 Publish the image to the web ECR repository output by `RankKitComputeStack`:
@@ -205,6 +205,7 @@ Publish the image to the web ECR repository output by `RankKitComputeStack`:
 ```powershell
 pnpm run deploy:web-image -- `
   -RepositoryUri 123456789012.dkr.ecr.us-east-1.amazonaws.com/rankkit-web `
+  -NextPublicApiUrl https://api.your-web-app.example `
   -ImageTag main
 ```
 

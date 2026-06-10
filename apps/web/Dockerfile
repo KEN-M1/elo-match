@@ -10,8 +10,10 @@ RUN pnpm install --frozen-lockfile --filter @rankkit/web...
 
 FROM node:22-alpine AS builder
 WORKDIR /app
+ARG NEXT_PUBLIC_API_URL=http://localhost:8000
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV RANKKIT_STANDALONE=true
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN corepack enable
 
 COPY --from=deps /app ./

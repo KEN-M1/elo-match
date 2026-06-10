@@ -139,6 +139,7 @@ pnpm run deploy:api-image -- `
 ```powershell
 pnpm run deploy:web-image -- `
   -RepositoryUri 123456789012.dkr.ecr.us-east-1.amazonaws.com/rankkit-web `
+  -NextPublicApiUrl https://api.your-web-app.example `
   -ImageTag main
 ```
 

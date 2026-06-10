@@ -9,8 +9,36 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Resolve-CommandPath {
+  param(
+    [Parameter(Mandatory=$true)]
+    [string]$Name,
+
+    [string[]]$FallbackPaths = @()
+  )
+
+  $command = Get-Command $Name -ErrorAction SilentlyContinue
+  if ($command) {
+    return $command.Source
+  }
+
+  foreach ($path in $FallbackPaths) {
+    if (Test-Path -LiteralPath $path) {
+      return $path
+    }
+  }
+
+  return $null
+}
+
 $repoRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")
 $registry = ($RepositoryUri -split "/")[0]
+$awsCommand = Resolve-CommandPath `
+  -Name "aws" `
+  -FallbackPaths @("C:\Program Files\Amazon\AWSCLIV2\aws.exe")
+if (-not $awsCommand) {
+  throw "AWS CLI is required for image publishing. Install and configure AWS CLI v2."
+}
 
 if ([string]::IsNullOrWhiteSpace($AWSRegion)) {
   if ($registry -match "\.ecr\.([a-z0-9-]+)\.amazonaws\.com") {
@@ -30,7 +58,7 @@ try {
     exit $LASTEXITCODE
   }
 
-  $password = & aws ecr get-login-password --region $AWSRegion
+  $password = & $awsCommand ecr get-login-password --region $AWSRegion
   if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
   }

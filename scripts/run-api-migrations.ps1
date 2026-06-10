@@ -18,6 +18,35 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Resolve-CommandPath {
+  param(
+    [Parameter(Mandatory=$true)]
+    [string]$Name,
+
+    [string[]]$FallbackPaths = @()
+  )
+
+  $command = Get-Command $Name -ErrorAction SilentlyContinue
+  if ($command) {
+    return $command.Source
+  }
+
+  foreach ($path in $FallbackPaths) {
+    if (Test-Path -LiteralPath $path) {
+      return $path
+    }
+  }
+
+  return $null
+}
+
+$awsCommand = Resolve-CommandPath `
+  -Name "aws" `
+  -FallbackPaths @("C:\Program Files\Amazon\AWSCLIV2\aws.exe")
+if (-not $awsCommand) {
+  throw "AWS CLI is required for production migrations. Install and configure AWS CLI v2."
+}
+
 $networkConfiguration = @{
   awsvpcConfiguration = @{
     subnets = $SubnetIds
@@ -51,7 +80,7 @@ $runTaskArgs = @(
   "--output", "text"
 ) + $regionArgs
 
-$taskArn = & aws @runTaskArgs
+$taskArn = & $awsCommand @runTaskArgs
 if ($LASTEXITCODE -ne 0) {
   exit $LASTEXITCODE
 }
@@ -59,7 +88,7 @@ if ([string]::IsNullOrWhiteSpace($taskArn) -or $taskArn -eq "None") {
   throw "AWS ECS did not return a migration task ARN."
 }
 
-& aws ecs wait tasks-stopped --cluster $ClusterName --tasks $taskArn @regionArgs
+& $awsCommand ecs wait tasks-stopped --cluster $ClusterName --tasks $taskArn @regionArgs
 if ($LASTEXITCODE -ne 0) {
   exit $LASTEXITCODE
 }
@@ -70,7 +99,7 @@ $describeTaskArgs = @(
   "--tasks", $taskArn,
   "--output", "json"
 ) + $regionArgs
-$taskDescription = & aws @describeTaskArgs | ConvertFrom-Json
+$taskDescription = & $awsCommand @describeTaskArgs | ConvertFrom-Json
 if ($LASTEXITCODE -ne 0) {
   exit $LASTEXITCODE
 }

@@ -1,6 +1,7 @@
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { SignJWT } from "jose";
+import { requireNextAuthSecret } from "./auth-secret";
 
 async function issueRankKitToken(user: {
   id?: string | null;
@@ -8,7 +9,7 @@ async function issueRankKitToken(user: {
   name?: string | null;
   image?: string | null;
 }) {
-  const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET ?? "dev-nextauth-secret-change-me");
+  const secret = new TextEncoder().encode(requireNextAuthSecret());
   const subject = user.email ?? user.id ?? "rankkit-user";
 
   return new SignJWT({

@@ -1,6 +1,7 @@
 import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { requireNextAuthSecret } from "./src/auth-secret";
 
 const protectedPrefixes = ["/dashboard", "/leagues", "/invites"];
 
@@ -19,7 +20,7 @@ export default async function middleware(request: NextRequest) {
 
   const token = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: requireNextAuthSecret(),
   });
 
   if (token) {

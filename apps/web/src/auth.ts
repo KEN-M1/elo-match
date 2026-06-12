@@ -1,7 +1,9 @@
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { SignJWT } from "jose";
-import { requireNextAuthSecret } from "./auth-secret";
+import { requireGoogleOAuthCredentials, requireNextAuthSecret } from "./auth-secret";
+
+const googleOAuthCredentials = requireGoogleOAuthCredentials();
 
 async function issueRankKitToken(user: {
   id?: string | null;
@@ -30,8 +32,8 @@ export const authOptions: NextAuthOptions = {
   },
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+      clientId: googleOAuthCredentials.clientId,
+      clientSecret: googleOAuthCredentials.clientSecret,
     }),
   ],
   callbacks: {

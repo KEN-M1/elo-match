@@ -5,7 +5,7 @@ param(
   [Parameter(Mandatory=$true)]
   [string]$NextPublicApiUrl,
 
-  [string]$ImageTag = "main",
+  [string]$ImageTag = "",
 
   [string]$AWSRegion = ""
 )
@@ -34,6 +34,23 @@ function Resolve-CommandPath {
   return $null
 }
 
+function Resolve-ImageTag {
+  param(
+    [string]$ImageTag
+  )
+
+  if (-not [string]::IsNullOrWhiteSpace($ImageTag)) {
+    return $ImageTag
+  }
+
+  $resolvedTag = git rev-parse --short=12 HEAD
+  if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($resolvedTag)) {
+    throw "Unable to resolve a default image tag from git. Pass -ImageTag explicitly."
+  }
+
+  return $resolvedTag.Trim()
+}
+
 $repoRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")
 $registry = ($RepositoryUri -split "/")[0]
 $awsCommand = Resolve-CommandPath `
@@ -51,11 +68,12 @@ if ([string]::IsNullOrWhiteSpace($AWSRegion)) {
   }
 }
 
-$localImage = "rankkit-web:$ImageTag"
-$remoteImage = "$RepositoryUri`:$ImageTag"
-
 Push-Location $repoRoot
 try {
+  $ImageTag = Resolve-ImageTag -ImageTag $ImageTag
+  $localImage = "rankkit-web:$ImageTag"
+  $remoteImage = "$RepositoryUri`:$ImageTag"
+
   & docker build --progress=plain -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_API_URL=$NextPublicApiUrl -t $localImage .
   if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE

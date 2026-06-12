@@ -10,7 +10,7 @@ Collect these values before starting:
 - AWS account ID and region.
 - API ECR repository URI from `RankKitComputeStack`.
 - Web ECR repository URI from `RankKitComputeStack`.
-- Release image tag, usually the Git SHA or `main` for a manual smoke release.
+- Release image tag, usually the current Git SHA.
 - `JwtSecretArn` for the shared `JWT_SECRET` and `NEXTAUTH_SECRET` value.
 - `GoogleClientId`.
 - `GoogleClientSecretArn`.
@@ -106,11 +106,11 @@ pnpm run deploy:api-infra -- `
   -GoogleClientId your-google-client-id `
   -GoogleClientSecretArn arn:aws:secretsmanager:us-east-1:123456789012:secret:rankkit/google-client-secret `
   -AllowedOrigins https://your-web-app.example `
-  -ApiImageTag main `
+  -ApiImageTag bootstrap `
   -ApiDesiredCount 0 `
   -ApiCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/api-certificate-id `
   -ApiPublicUrl https://api.your-web-app.example `
-  -WebImageTag main `
+  -WebImageTag bootstrap `
   -WebDesiredCount 0 `
   -WebAppUrl https://your-web-app.example `
   -WebCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/web-certificate-id `
@@ -128,19 +128,18 @@ unhealthy-target alarms publish to the SNS topic when the topic ARN is set.
 
 ## Publish Images
 
-Publish both images with the same release tag. Prefer an immutable Git SHA tag for real releases.
+Publish both images with the same release tag. When `-ImageTag` is omitted, the publish scripts use
+the current Git SHA, which is the recommended release tag.
 
 ```powershell
 pnpm run deploy:api-image -- `
-  -RepositoryUri 123456789012.dkr.ecr.us-east-1.amazonaws.com/rankkit-api `
-  -ImageTag main
+  -RepositoryUri 123456789012.dkr.ecr.us-east-1.amazonaws.com/rankkit-api
 ```
 
 ```powershell
 pnpm run deploy:web-image -- `
   -RepositoryUri 123456789012.dkr.ecr.us-east-1.amazonaws.com/rankkit-web `
-  -NextPublicApiUrl https://api.your-web-app.example `
-  -ImageTag main
+  -NextPublicApiUrl https://api.your-web-app.example
 ```
 
 Expected output: each script logs in to ECR, builds, tags, and pushes the requested image. Stop if
@@ -173,11 +172,11 @@ pnpm run deploy:api-infra -- `
   -GoogleClientId your-google-client-id `
   -GoogleClientSecretArn arn:aws:secretsmanager:us-east-1:123456789012:secret:rankkit/google-client-secret `
   -AllowedOrigins https://your-web-app.example `
-  -ApiImageTag main `
+  -ApiImageTag release-git-sha `
   -ApiDesiredCount 1 `
   -ApiCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/api-certificate-id `
   -ApiPublicUrl https://api.your-web-app.example `
-  -WebImageTag main `
+  -WebImageTag release-git-sha `
   -WebDesiredCount 1 `
   -WebAppUrl https://your-web-app.example `
   -WebCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/web-certificate-id `
@@ -244,7 +243,7 @@ rolling app code backward. For now, avoid destructive migrations in production r
   AWS region before retrying the preflight.
 - If Docker is unavailable, start Docker Desktop or rely on GitHub Actions for image build proof
   before publishing from a machine with Docker available.
-- If GitHub Actions is red, do not release from `main`.
+- If GitHub Actions is red, do not release from the branch.
 - If image publishing fails, keep desired counts unchanged and retry after correcting ECR, Docker,
   or AWS credential issues.
 - If migrations fail, keep the previous running service revision and inspect the stopped ECS task

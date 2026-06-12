@@ -64,6 +64,30 @@ function Assert-NotPlaceholder {
   }
 }
 
+function Assert-DeployableImageTag {
+  param(
+    [Parameter(Mandatory=$true)]
+    [string]$Name,
+
+    [Parameter(Mandatory=$true)]
+    [string]$Value,
+
+    [Parameter(Mandatory=$true)]
+    [int]$DesiredCount,
+
+    [Parameter(Mandatory=$true)]
+    [string]$Message
+  )
+
+  if ($DesiredCount -le 0) {
+    return
+  }
+
+  if ([string]::IsNullOrWhiteSpace($Value) -or $Value -in @("main", "latest")) {
+    throw $Message
+  }
+}
+
 Assert-NotPlaceholder `
   -Name "ApiPublicUrl" `
   -Value $ApiPublicUrl `
@@ -72,6 +96,16 @@ Assert-NotPlaceholder `
   -Name "WebAppUrl" `
   -Value $WebAppUrl `
   -Message "WebAppUrl must be set to the deployed web origin."
+Assert-DeployableImageTag `
+  -Name "ApiImageTag" `
+  -Value $ApiImageTag `
+  -DesiredCount $ApiDesiredCount `
+  -Message "ApiImageTag cannot be 'main' or 'latest' when ApiDesiredCount is greater than zero."
+Assert-DeployableImageTag `
+  -Name "WebImageTag" `
+  -Value $WebImageTag `
+  -DesiredCount $WebDesiredCount `
+  -Message "WebImageTag cannot be 'main' or 'latest' when WebDesiredCount is greater than zero."
 
 Push-Location $infraRoot
 try {

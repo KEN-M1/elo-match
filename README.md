@@ -178,12 +178,12 @@ Build the backend image from the repository root:
 docker build -t rankkit-api ./backend
 ```
 
-Publish the image to the ECR repository output by `RankKitComputeStack`:
+Publish the image to the ECR repository output by `RankKitComputeStack`. When `-ImageTag` is
+omitted, the script tags the image with the current Git SHA:
 
 ```powershell
 pnpm run deploy:api-image -- `
-  -RepositoryUri 123456789012.dkr.ecr.us-east-1.amazonaws.com/rankkit-api `
-  -ImageTag main
+  -RepositoryUri 123456789012.dkr.ecr.us-east-1.amazonaws.com/rankkit-api
 ```
 
 Run the container with production environment variables and a reachable Postgres `DATABASE_URL`.
@@ -200,13 +200,13 @@ Build the web image from the repository root:
 docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_API_URL=https://api.your-web-app.example -t rankkit-web .
 ```
 
-Publish the image to the web ECR repository output by `RankKitComputeStack`:
+Publish the image to the web ECR repository output by `RankKitComputeStack`. When `-ImageTag` is
+omitted, the script tags the image with the current Git SHA:
 
 ```powershell
 pnpm run deploy:web-image -- `
   -RepositoryUri 123456789012.dkr.ecr.us-east-1.amazonaws.com/rankkit-web `
-  -NextPublicApiUrl https://api.your-web-app.example `
-  -ImageTag main
+  -NextPublicApiUrl https://api.your-web-app.example
 ```
 
 Run the image with the production API URL and shared auth secret:
@@ -265,11 +265,13 @@ Deploy-time parameters keep environment-specific values out of source:
 
 - `JwtSecretArn`: Secrets Manager ARN containing the shared `JWT_SECRET`/`NEXTAUTH_SECRET` value.
 - `AllowedOrigins`: comma-separated web origins allowed to call the API.
-- `ApiImageTag`: ECR image tag to run for the API service.
+- `ApiImageTag`: ECR image tag to run for the API service. Use an immutable release tag, such as
+  the Git SHA, when `ApiDesiredCount` is greater than `0`.
 - `ApiDesiredCount`: number of API tasks to run. Use `0` for the first compute deploy before an image exists.
 - `ApiCertificateArn`: ACM certificate ARN for the public API load balancer.
 - `ApiPublicUrl`: public HTTPS API origin used by the web app.
-- `WebImageTag`: ECR image tag to run for the web service.
+- `WebImageTag`: ECR image tag to run for the web service. Use an immutable release tag, such as
+  the Git SHA, when `WebDesiredCount` is greater than `0`.
 - `WebDesiredCount`: number of web tasks to run. Use `0` for the first compute deploy before an image exists.
 - `WebAppUrl`: public web origin used by NextAuth.
 - `WebCertificateArn`: ACM certificate ARN for the public web load balancer.
@@ -291,11 +293,11 @@ pnpm run deploy:api-infra -- `
   -GoogleClientId your-google-client-id `
   -GoogleClientSecretArn arn:aws:secretsmanager:us-east-1:123456789012:secret:rankkit/google-client-secret `
   -AllowedOrigins https://your-web-app.example `
-  -ApiImageTag main `
+  -ApiImageTag bootstrap `
   -ApiDesiredCount 0 `
   -ApiCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/api-certificate-id `
   -ApiPublicUrl https://api.your-web-app.example `
-  -WebImageTag main `
+  -WebImageTag bootstrap `
   -WebDesiredCount 0 `
   -WebAppUrl https://your-web-app.example `
   -WebCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/web-certificate-id `
@@ -331,11 +333,11 @@ pnpm run deploy:api-infra -- `
   -GoogleClientId your-google-client-id `
   -GoogleClientSecretArn arn:aws:secretsmanager:us-east-1:123456789012:secret:rankkit/google-client-secret `
   -AllowedOrigins https://your-web-app.example `
-  -ApiImageTag main `
+  -ApiImageTag release-git-sha `
   -ApiDesiredCount 1 `
   -ApiCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/api-certificate-id `
   -ApiPublicUrl https://api.your-web-app.example `
-  -WebImageTag main `
+  -WebImageTag release-git-sha `
   -WebDesiredCount 1 `
   -WebAppUrl https://your-web-app.example `
   -WebCertificateArn arn:aws:acm:us-east-1:123456789012:certificate/web-certificate-id `

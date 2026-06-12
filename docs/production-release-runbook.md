@@ -27,18 +27,18 @@ Collect these values before starting:
 
 ## Preflight Verification
 
-Install and configure AWS CLI v2, Docker Desktop, GitHub CLI, Node, pnpm, and Python before
-attempting a live deploy. Verify the local branch is clean and the release has passed CI. GitHub
-Actions is the authoritative Docker image validation path because local Docker can hang or differ
-from the Linux runner.
+Install and configure AWS CLI v2, Docker Desktop, GitHub CLI, Git, Node, pnpm, and Python before
+attempting a live deploy. Verify the local branch has a clean working tree and the release has
+passed CI. GitHub Actions is the authoritative Docker image validation path because local Docker can
+hang or differ from the Linux runner.
 
 ```powershell
 git status --short --branch
 gh run list --branch main --limit 3
 ```
 
-Run the production preflight to check AWS CLI identity, AWS region, Docker availability, latest
-GitHub Actions status, and CDK synth:
+Run the production preflight to check the clean working tree, AWS CLI identity, AWS region, Docker
+availability, latest GitHub Actions status, and CDK synth:
 
 ```powershell
 pnpm run deploy:preflight -- `
@@ -64,8 +64,8 @@ Pop-Location
 
 Expected output: tests pass, the web build succeeds, Playwright completes, and CDK synth exits
 without errors. CDK notices about supported Node versions are informational unless synth fails.
-The preflight prints `Production preflight passed.` when AWS CLI, Docker, GitHub Actions, and CDK
-are ready for the live release sequence.
+The preflight prints `Production preflight passed.` when the working tree, AWS CLI, Docker, GitHub
+Actions, and CDK are ready for the live release sequence.
 
 ## Local Production Compose
 

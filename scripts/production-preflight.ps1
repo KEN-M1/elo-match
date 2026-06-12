@@ -70,7 +70,18 @@ if (-not $awsCommand) {
 }
 Test-CommandAvailable -Name "docker" -InstallHint "Install Docker Desktop and make sure the daemon is running."
 Test-CommandAvailable -Name "gh" -InstallHint "Install GitHub CLI and authenticate with gh auth login."
+Test-CommandAvailable -Name "git" -InstallHint "Install Git and run preflight from a checked-out repository."
 Test-CommandAvailable -Name "npx.cmd" -InstallHint "Install Node.js dependencies with pnpm install."
+
+Write-Host "Checking working tree..."
+$gitStatus = git status --short
+if ($LASTEXITCODE -ne 0) {
+  throw "Git status could not be read. Run preflight from the RankKit repository root."
+}
+if ($gitStatus) {
+  throw "Working tree has uncommitted changes. Commit, stash, or discard them before production deployment."
+}
+Write-Host "Working tree is clean."
 
 Write-Host "Checking AWS CLI identity..."
 $identityJson = & $awsCommand sts get-caller-identity

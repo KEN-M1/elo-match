@@ -342,6 +342,8 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "C:\\Program Files\\Amazon\\AWSCLIV2\\aws.exe",
             "& $awsCommand sts get-caller-identity",
             "& $awsCommand configure get region",
+            "git status --short",
+            "Working tree has uncommitted changes",
             "docker version",
             "gh run list",
             "npx.cmd aws-cdk@2.173.4 synth",

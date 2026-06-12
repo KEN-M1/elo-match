@@ -143,6 +143,20 @@ jobs:
       - name: Validate local production compose
         run: docker compose -f compose.production-local.yaml config
 
+      - name: Start local production compose
+        run: docker compose -f compose.production-local.yaml up --build --detach
+
+      - name: Smoke local production compose
+        run: pwsh -NoLogo -NoProfile -File scripts/smoke-production.ps1 -ApiUrl http://localhost:8002 -WebUrl http://localhost:3000 -MaxAttempts 18 -DelaySeconds 5
+
+      - name: Show local production compose logs
+        if: failure()
+        run: docker compose -f compose.production-local.yaml logs
+
+      - name: Stop local production compose
+        if: always()
+        run: docker compose -f compose.production-local.yaml down --volumes
+
   cdk-synth:
     name: CDK synth
     runs-on: ubuntu-latest

@@ -382,6 +382,14 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "curl --fail http://127.0.0.1:3001",
             "Local production compose",
             "docker compose -f compose.production-local.yaml config",
+            "Start local production compose",
+            "docker compose -f compose.production-local.yaml up --build --detach",
+            "Smoke local production compose",
+            "pwsh -NoLogo -NoProfile -File scripts/smoke-production.ps1 -ApiUrl http://localhost:8002 -WebUrl http://localhost:3000 -MaxAttempts 18 -DelaySeconds 5",
+            "Show local production compose logs",
+            "docker compose -f compose.production-local.yaml logs",
+            "Stop local production compose",
+            "docker compose -f compose.production-local.yaml down --volumes",
         ]:
             self.assertIn(expected, workflow)
 

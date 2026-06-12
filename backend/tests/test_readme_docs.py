@@ -68,6 +68,7 @@ class ReadmeDocsTests(unittest.TestCase):
             "backend Docker image",
             "web image job",
             "local production compose",
+            "smoke-tests the local production compose stack",
             "CDK synth",
             "## Postgres Adapter Smoke",
             "pnpm run db:smoke",

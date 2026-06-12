@@ -47,6 +47,32 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")
 $infraRoot = Join-Path $repoRoot "infra"
 
+function Assert-NotPlaceholder {
+  param(
+    [Parameter(Mandatory=$true)]
+    [string]$Name,
+
+    [Parameter(Mandatory=$true)]
+    [string]$Value,
+
+    [Parameter(Mandatory=$true)]
+    [string]$Message
+  )
+
+  if ([string]::IsNullOrWhiteSpace($Value) -or $Value -match "replace-me") {
+    throw $Message
+  }
+}
+
+Assert-NotPlaceholder `
+  -Name "ApiPublicUrl" `
+  -Value $ApiPublicUrl `
+  -Message "ApiPublicUrl must be set to the deployed API origin."
+Assert-NotPlaceholder `
+  -Name "WebAppUrl" `
+  -Value $WebAppUrl `
+  -Message "WebAppUrl must be set to the deployed web origin."
+
 Push-Location $infraRoot
 try {
   & npx.cmd aws-cdk@2.173.4 deploy RankKitComputeStack `

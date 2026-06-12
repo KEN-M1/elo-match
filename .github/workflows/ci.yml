@@ -132,6 +132,17 @@ jobs:
         if: always()
         run: docker rm -f rankkit-web-smoke || true
 
+  local-production-compose:
+    name: Local production compose
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate local production compose
+        run: docker compose -f compose.production-local.yaml config
+
   cdk-synth:
     name: CDK synth
     runs-on: ubuntu-latest

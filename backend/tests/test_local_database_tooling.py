@@ -380,6 +380,8 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "docker run -d --name rankkit-web-smoke",
             "NEXT_PUBLIC_API_URL=http://localhost:8002",
             "curl --fail http://127.0.0.1:3001",
+            "Local production compose",
+            "docker compose -f compose.production-local.yaml config",
         ]:
             self.assertIn(expected, workflow)
 

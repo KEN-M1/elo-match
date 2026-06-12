@@ -245,8 +245,8 @@ For an end-to-end production release sequence with preflight checks, image publi
 service rollout, smoke checks, and rollback notes, use `docs/production-release-runbook.md`.
 
 Before attempting a live AWS deploy, run the production preflight. It verifies a clean working tree,
-AWS CLI identity and region, Docker availability, the latest GitHub Actions result, and CDK
-synthesis:
+that the latest passing GitHub Actions run matches local HEAD, AWS CLI identity and region, Docker
+availability, and CDK synthesis:
 
 ```powershell
 pnpm run deploy:preflight -- `

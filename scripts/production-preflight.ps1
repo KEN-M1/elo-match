@@ -81,6 +81,10 @@ if ($LASTEXITCODE -ne 0) {
 if ($gitStatus) {
   throw "Working tree has uncommitted changes. Commit, stash, or discard them before production deployment."
 }
+$localHead = git rev-parse HEAD
+if ($LASTEXITCODE -ne 0 -or -not $localHead) {
+  throw "Git HEAD could not be read. Run preflight from the RankKit repository root."
+}
 Write-Host "Working tree is clean."
 
 Write-Host "Checking AWS CLI identity..."
@@ -110,12 +114,15 @@ Invoke-CheckedCommand `
   -FailureMessage "Docker is required for image publishing. Start Docker Desktop and retry."
 
 Write-Host "Checking GitHub Actions status..."
-$latestRun = gh run list --branch $Branch --limit 1 --json conclusion,status,databaseId,displayTitle | ConvertFrom-Json
+$latestRun = gh run list --branch $Branch --limit 1 --json conclusion,status,databaseId,displayTitle,headSha | ConvertFrom-Json
 if ($LASTEXITCODE -ne 0 -or -not $latestRun) {
   throw "GitHub Actions status could not be read. Check gh authentication."
 }
 if ($latestRun[0].status -ne "completed" -or $latestRun[0].conclusion -ne "success") {
   throw "Latest GitHub Actions run on $Branch is not green: $($latestRun[0].displayTitle) / $($latestRun[0].status) / $($latestRun[0].conclusion)."
+}
+if ($latestRun[0].headSha -ne $localHead) {
+  throw "Latest GitHub Actions run on $Branch ($($latestRun[0].headSha)) does not match local HEAD ($localHead). Push this commit and wait for CI to pass before production deployment."
 }
 Write-Host "GitHub Actions latest run is green: $($latestRun[0].databaseId)"
 

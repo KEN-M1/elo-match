@@ -99,6 +99,8 @@ production runtime shape while issue `#13` remains deferred.
 Use this only for the first deployment into a new environment, or when the ECR repositories do not
 exist yet. The goal is to create infrastructure and repositories without starting ECS tasks before
 images exist.
+Replace every sample ARN, account ID, OAuth value, certificate ID, and `your-*` domain before
+running the command. The deploy helper rejects placeholder values before invoking CDK.
 
 ```powershell
 pnpm run deploy:api-infra -- `
@@ -169,6 +171,8 @@ migration container exits non-zero.
 Redeploy compute with running service counts after the images are pushed and migrations pass.
 When `ApiImageTag` or `WebImageTag` is omitted, the deploy script uses the current Git SHA. Pass
 the tag explicitly when rolling back or deploying a different already-published image.
+The same placeholder validation from bootstrap applies here too, so sample values must be replaced
+with the real production inputs.
 
 ```powershell
 pnpm run deploy:api-infra -- `

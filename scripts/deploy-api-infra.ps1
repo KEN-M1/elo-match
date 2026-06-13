@@ -59,7 +59,7 @@ function Assert-NotPlaceholder {
     [string]$Message
   )
 
-  if ([string]::IsNullOrWhiteSpace($Value) -or $Value -match "replace-me") {
+  if ([string]::IsNullOrWhiteSpace($Value) -or $Value -match "replace-me|your-|certificate-id|123456789012|\.example") {
     throw $Message
   }
 }
@@ -106,6 +106,26 @@ function Assert-DeployableImageTag {
 }
 
 Assert-NotPlaceholder `
+  -Name "JwtSecretArn" `
+  -Value $JwtSecretArn `
+  -Message "JwtSecretArn must be set to a real Secrets Manager ARN."
+Assert-NotPlaceholder `
+  -Name "GoogleClientId" `
+  -Value $GoogleClientId `
+  -Message "GoogleClientId must be set to the deployed Google OAuth client ID."
+Assert-NotPlaceholder `
+  -Name "GoogleClientSecretArn" `
+  -Value $GoogleClientSecretArn `
+  -Message "GoogleClientSecretArn must be set to a real Secrets Manager ARN."
+Assert-NotPlaceholder `
+  -Name "AllowedOrigins" `
+  -Value $AllowedOrigins `
+  -Message "AllowedOrigins must be set to the deployed web origin."
+Assert-NotPlaceholder `
+  -Name "ApiCertificateArn" `
+  -Value $ApiCertificateArn `
+  -Message "ApiCertificateArn must be set to a real ACM certificate ARN."
+Assert-NotPlaceholder `
   -Name "ApiPublicUrl" `
   -Value $ApiPublicUrl `
   -Message "ApiPublicUrl must be set to the deployed API origin."
@@ -113,6 +133,10 @@ Assert-NotPlaceholder `
   -Name "WebAppUrl" `
   -Value $WebAppUrl `
   -Message "WebAppUrl must be set to the deployed web origin."
+Assert-NotPlaceholder `
+  -Name "WebCertificateArn" `
+  -Value $WebCertificateArn `
+  -Message "WebCertificateArn must be set to a real ACM certificate ARN."
 
 Push-Location $repoRoot
 try {

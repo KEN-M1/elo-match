@@ -420,6 +420,10 @@ class LocalDatabaseToolingTests(unittest.TestCase):
         for expected in [
             "windows-latest",
             "ubuntu-latest",
+            "timeout-minutes: 25",
+            "timeout-minutes: 15",
+            "timeout-minutes: 20",
+            "timeout-minutes: 10",
             "permissions:",
             "contents: read",
             "FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true",

@@ -16,6 +16,7 @@ jobs:
   verify:
     name: Verify app
     runs-on: windows-latest
+    timeout-minutes: 25
 
     steps:
       - name: Check out repository
@@ -61,6 +62,7 @@ jobs:
   backend-image:
     name: Backend image
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -104,6 +106,7 @@ jobs:
   web-image:
     name: Web image
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Check out repository
@@ -142,6 +145,7 @@ jobs:
   local-production-compose:
     name: Local production compose
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Check out repository
@@ -167,6 +171,7 @@ jobs:
   cdk-synth:
     name: CDK synth
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
@@ -193,6 +198,7 @@ jobs:
   postgres-smoke:
     name: Postgres smoke
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     services:
       postgres:

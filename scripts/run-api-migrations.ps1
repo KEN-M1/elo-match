@@ -76,14 +76,20 @@ $runTaskArgs = @(
   "--launch-type", "FARGATE",
   "--network-configuration", $networkConfiguration,
   "--overrides", $overrides,
-  "--query", "tasks[0].taskArn",
-  "--output", "text"
+  "--output", "json"
 ) + $regionArgs
 
-$taskArn = & $awsCommand @runTaskArgs
+$runTaskResult = & $awsCommand @runTaskArgs | ConvertFrom-Json
 if ($LASTEXITCODE -ne 0) {
   exit $LASTEXITCODE
 }
+$failures = @($runTaskResult.failures)
+if ($failures.Count -gt 0) {
+  $failureSummary = ($failures | ForEach-Object { "$($_.arn): $($_.reason)" }) -join "; "
+  throw "AWS ECS could not start the migration task: $failureSummary"
+}
+
+$taskArn = $runTaskResult.tasks[0].taskArn
 if ([string]::IsNullOrWhiteSpace($taskArn) -or $taskArn -eq "None") {
   throw "AWS ECS did not return a migration task ARN."
 }

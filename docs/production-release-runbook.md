@@ -159,8 +159,9 @@ pnpm run deploy:api-migrations -- `
   -AWSRegion us-east-1
 ```
 
-Expected output: the migration task stops with exit code `0`. Stop the release if the task exits
-non-zero.
+Expected output: the migration task starts, stops with exit code `0`, and prints the task ARN. Stop
+the release if ECS cannot start the task or if the task exits non-zero; the helper prints the ECS
+failure reason when `run-task` returns one.
 
 ## Roll Out Services
 

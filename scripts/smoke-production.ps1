@@ -49,6 +49,10 @@ $apiHealth = $apiResponse.Content | ConvertFrom-Json
 if ($apiHealth.status -ne "ok") {
   throw "API health response did not report status ok: $($apiResponse.Content)"
 }
-Test-RankKitEndpoint -Name "Web root" -Url $webRootUrl
+
+$webResponse = Test-RankKitEndpoint -Name "Web root" -Url $webRootUrl
+if ($webResponse.Content -notmatch "RankKit") {
+  throw "Web root response did not include RankKit: $webRootUrl"
+}
 
 Write-Host "Production smoke passed."

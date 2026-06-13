@@ -211,8 +211,8 @@ pnpm run deploy:smoke -- `
   -WebUrl https://your-web-app.example
 ```
 
-Expected output: API `/health` and the web root return successful HTTP responses, then the script
-prints `Production smoke passed.`
+Expected output: API `/health` returns `{"status":"ok"}`, the web root contains the `RankKit`
+marker, and the script prints `Production smoke passed.`
 
 ## Rollback
 

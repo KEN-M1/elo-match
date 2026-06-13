@@ -378,6 +378,8 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "ConvertFrom-Json",
             "$apiHealth.status -ne \"ok\"",
             "API health response did not report status ok",
+            "$webResponse.Content -notmatch \"RankKit\"",
+            "Web root response did not include RankKit",
             "Write-Host",
             "Start-Sleep",
             "throw",

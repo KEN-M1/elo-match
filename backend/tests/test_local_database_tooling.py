@@ -1,4 +1,6 @@
 import json
+import shutil
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -133,6 +135,27 @@ class LocalDatabaseToolingTests(unittest.TestCase):
         for script_name in ["dev-db.ps1", "migrate-db.ps1", "migration-sql.ps1", "verify-db.ps1"]:
             script = (REPO_ROOT / "scripts" / script_name).read_text(encoding="utf-8")
             self.assertIn("if ($LASTEXITCODE -ne 0)", script)
+
+    def test_powershell_scripts_parse(self) -> None:
+        powershell = shutil.which("powershell") or shutil.which("pwsh")
+        if powershell is None:
+            self.skipTest("PowerShell is required to parse repository scripts.")
+
+        for script_path in sorted((REPO_ROOT / "scripts").glob("*.ps1")):
+            with self.subTest(script=script_path.name):
+                escaped_path = str(script_path).replace("'", "''")
+                parse_command = (
+                    "$null = [scriptblock]::Create("
+                    f"(Get-Content -Raw -LiteralPath '{escaped_path}'))"
+                )
+                result = subprocess.run(
+                    [powershell, "-NoLogo", "-NoProfile", "-Command", parse_command],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual("", result.stderr)
+                self.assertEqual(0, result.returncode)
 
     def test_backend_start_script_runs_uvicorn_without_reload(self) -> None:
         script = (REPO_ROOT / "scripts" / "start-backend.ps1").read_text(encoding="utf-8")

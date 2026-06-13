@@ -6,6 +6,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -82,9 +85,10 @@ jobs:
             rankkit-api
 
           for attempt in $(seq 1 30); do
-            api_body=$(curl --fail --silent http://127.0.0.1:8002/health)
-            if echo "$api_body" | grep -q '"status":"ok"'; then
-              exit 0
+            if api_body=$(curl --fail --silent http://127.0.0.1:8002/health); then
+              if echo "$api_body" | grep -q '"status":"ok"'; then
+                exit 0
+              fi
             fi
             sleep 1
           done
@@ -119,9 +123,10 @@ jobs:
             rankkit-web
 
           for attempt in $(seq 1 30); do
-            web_body=$(curl --fail --silent http://127.0.0.1:3001)
-            if echo "$web_body" | grep -q "RankKit"; then
-              exit 0
+            if web_body=$(curl --fail --silent http://127.0.0.1:3001); then
+              if echo "$web_body" | grep -q "RankKit"; then
+                exit 0
+              fi
             fi
             sleep 1
           done

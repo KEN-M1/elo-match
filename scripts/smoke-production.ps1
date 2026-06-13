@@ -26,7 +26,7 @@ function Test-RankKitEndpoint {
       $response = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 10
       if ($response.StatusCode -ge 200 -and $response.StatusCode -lt 400) {
         Write-Host "$Name smoke passed with status $($response.StatusCode): $Url"
-        return
+        return $response
       }
       Write-Host "$Name smoke attempt $attempt returned status $($response.StatusCode): $Url"
     } catch {
@@ -44,7 +44,11 @@ function Test-RankKitEndpoint {
 $apiHealthUrl = $ApiUrl.TrimEnd('/') + "/health"
 $webRootUrl = $WebUrl.TrimEnd('/')
 
-Test-RankKitEndpoint -Name "API health" -Url $apiHealthUrl
+$apiResponse = Test-RankKitEndpoint -Name "API health" -Url $apiHealthUrl
+$apiHealth = $apiResponse.Content | ConvertFrom-Json
+if ($apiHealth.status -ne "ok") {
+  throw "API health response did not report status ok: $($apiResponse.Content)"
+}
 Test-RankKitEndpoint -Name "Web root" -Url $webRootUrl
 
 Write-Host "Production smoke passed."

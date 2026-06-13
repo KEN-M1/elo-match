@@ -266,12 +266,14 @@ Deploy-time parameters keep environment-specific values out of source:
 - `JwtSecretArn`: Secrets Manager ARN containing the shared `JWT_SECRET`/`NEXTAUTH_SECRET` value.
 - `AllowedOrigins`: comma-separated web origins allowed to call the API.
 - `ApiImageTag`: ECR image tag to run for the API service. Use an immutable release tag, such as
-  the Git SHA, when `ApiDesiredCount` is greater than `0`.
+  the Git SHA, when `ApiDesiredCount` is greater than `0`. When omitted, the deploy script uses the
+  current Git SHA.
 - `ApiDesiredCount`: number of API tasks to run. Use `0` for the first compute deploy before an image exists.
 - `ApiCertificateArn`: ACM certificate ARN for the public API load balancer.
 - `ApiPublicUrl`: public HTTPS API origin used by the web app.
 - `WebImageTag`: ECR image tag to run for the web service. Use an immutable release tag, such as
-  the Git SHA, when `WebDesiredCount` is greater than `0`.
+  the Git SHA, when `WebDesiredCount` is greater than `0`. When omitted, the deploy script uses the
+  current Git SHA.
 - `WebDesiredCount`: number of web tasks to run. Use `0` for the first compute deploy before an image exists.
 - `WebAppUrl`: public web origin used by NextAuth.
 - `WebCertificateArn`: ACM certificate ARN for the public web load balancer.

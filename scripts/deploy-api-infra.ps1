@@ -11,7 +11,7 @@ param(
   [Parameter(Mandatory=$true)]
   [string]$AllowedOrigins,
 
-  [string]$ApiImageTag = "main",
+  [string]$ApiImageTag = "",
 
   [int]$ApiDesiredCount = 1,
 
@@ -20,7 +20,7 @@ param(
 
   [string]$ApiPublicUrl = "https://api.replace-me.example",
 
-  [string]$WebImageTag = "main",
+  [string]$WebImageTag = "",
 
   [int]$WebDesiredCount = 1,
 
@@ -64,6 +64,23 @@ function Assert-NotPlaceholder {
   }
 }
 
+function Resolve-ImageTag {
+  param(
+    [string]$ImageTag
+  )
+
+  if (-not [string]::IsNullOrWhiteSpace($ImageTag)) {
+    return $ImageTag
+  }
+
+  $resolvedTag = git rev-parse --short=12 HEAD
+  if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($resolvedTag)) {
+    throw "Unable to resolve a default image tag from git. Pass image tags explicitly."
+  }
+
+  return $resolvedTag.Trim()
+}
+
 function Assert-DeployableImageTag {
   param(
     [Parameter(Mandatory=$true)]
@@ -96,6 +113,15 @@ Assert-NotPlaceholder `
   -Name "WebAppUrl" `
   -Value $WebAppUrl `
   -Message "WebAppUrl must be set to the deployed web origin."
+
+Push-Location $repoRoot
+try {
+  $ApiImageTag = Resolve-ImageTag -ImageTag $ApiImageTag
+  $WebImageTag = Resolve-ImageTag -ImageTag $WebImageTag
+} finally {
+  Pop-Location
+}
+
 Assert-DeployableImageTag `
   -Name "ApiImageTag" `
   -Value $ApiImageTag `

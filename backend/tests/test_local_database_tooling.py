@@ -254,6 +254,8 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "Assert-NotPlaceholder",
             "ApiPublicUrl must be set to the deployed API origin.",
             "WebAppUrl must be set to the deployed web origin.",
+            "Resolve-ImageTag",
+            "git rev-parse --short=12 HEAD",
             "Assert-DeployableImageTag",
             "ApiImageTag cannot be 'main' or 'latest' when ApiDesiredCount is greater than zero.",
             "WebImageTag cannot be 'main' or 'latest' when WebDesiredCount is greater than zero.",

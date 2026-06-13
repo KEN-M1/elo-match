@@ -165,6 +165,8 @@ non-zero.
 ## Roll Out Services
 
 Redeploy compute with running service counts after the images are pushed and migrations pass.
+When `ApiImageTag` or `WebImageTag` is omitted, the deploy script uses the current Git SHA. Pass
+the tag explicitly when rolling back or deploying a different already-published image.
 
 ```powershell
 pnpm run deploy:api-infra -- `

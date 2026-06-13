@@ -323,6 +323,11 @@ class LocalDatabaseToolingTests(unittest.TestCase):
             "& $awsCommand ecs wait tasks-stopped",
             '"ecs", "describe-tasks"',
             "& $awsCommand @describeTaskArgs",
+            "$task = $taskDescription.tasks[0]",
+            "$task.stoppedReason",
+            "$container.reason",
+            "Stopped reason:",
+            "Container reason:",
             "exit $exitCode",
         ]:
             self.assertIn(expected, script)

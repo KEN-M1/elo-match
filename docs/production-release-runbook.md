@@ -161,7 +161,8 @@ pnpm run deploy:api-migrations -- `
 
 Expected output: the migration task starts, stops with exit code `0`, and prints the task ARN. Stop
 the release if ECS cannot start the task or if the task exits non-zero; the helper prints the ECS
-failure reason when `run-task` returns one.
+failure reason when `run-task` returns one and includes task/container stop reasons when the
+migration container exits non-zero.
 
 ## Roll Out Services
 

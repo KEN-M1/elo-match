@@ -110,14 +110,15 @@ if ($LASTEXITCODE -ne 0) {
   exit $LASTEXITCODE
 }
 
-$container = $taskDescription.tasks[0].containers | Where-Object { $_.name -eq $ContainerName } | Select-Object -First 1
+$task = $taskDescription.tasks[0]
+$container = $task.containers | Where-Object { $_.name -eq $ContainerName } | Select-Object -First 1
 if ($null -eq $container) {
   throw "Migration container '$ContainerName' was not found in task '$taskArn'."
 }
 
 $exitCode = [int]$container.exitCode
 if ($exitCode -ne 0) {
-  Write-Error "Migration task failed with exit code $exitCode."
+  Write-Error "Migration task failed with exit code $exitCode. Stopped reason: $($task.stoppedReason). Container reason: $($container.reason)."
   exit $exitCode
 }
 
